@@ -325,14 +325,54 @@ function applyPeriod(){const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)|
 
  $('#delp').disabled=cur.key==='__embedded__';
  if(!(st.c==='ALL'||DB.cols[st.c]))st.c='ALL';if(st.c==='ALL')st.p='ALL';else if(!DB.cols[st.c].acts.some(a=>a.prog===st.p))st.p='ALL'}
-function fillPeriods(){const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)||idx[0];st.per=cur.key;
- const years=[...new Set([EMB_Y,...idx.map(p=>p.year)])].sort((a,b)=>a-b);
- $('#yr').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');$('#yr').value=cur.year;
- const byQ={};idx.filter(p=>p.year===cur.year).forEach(p=>byQ[p.quarter]=p);
- const qlabel=q=>'Quarter '+q.slice(1);
- $('#qr').innerHTML=QORD.map(q=>byQ[q]?`<option value="${esc(byQ[q].key)}">${qlabel(q)}</option>`:`<option value="" disabled>${qlabel(q)} - no data yet</option>`).join('');
- $('#qr').value=cur.key}
-function pickYear(y){const idx=periodsIndex(),avail=idx.filter(p=>p.year===y).sort((a,b)=>qrank(a.quarter)-qrank(b.quarter));
+async function fillPeriods(){
+  const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)||idx[0];
+  if(!cur)return;
+
+  const years=[...new Set([EMB_Y,...idx.map(p=>p.year)])].sort((a,b)=>a-b);
+  $('#yr').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  $('#yr').value=cur.year;
+
+  const byQ={};
+  idx.filter(p=>p.year===cur.year).forEach(p=>byQ[p.quarter]=p);
+
+  // Discover shared quarterly workbooks from Supabase
+  try{
+    const {data,error}=await supabaseClient.storage
+      .from('extension-workbooks')
+      .list(String(cur.year));
+
+    if(!error && data){
+      data.forEach(file=>{
+        const m=file.name.match(/^(Q[1-4])\.xlsx$/i);
+        if(m){
+          const q=m[1].toUpperCase();
+          if(!byQ[q]){
+            byQ[q]={
+              key:`shared-${cur.year}-${q}`,
+              year:cur.year,
+              quarter:q,
+              label:`FY ${cur.year} ${q}`
+            };
+          }
+        }
+      });
+    }
+  }catch(e){
+    console.error('Could not list shared workbooks:',e);
+  }
+
+  const qlabel=q=>'Quarter '+q.slice(1);
+
+  $('#qr').innerHTML=QORD.map(q=>byQ[q]
+    ? `<option value="${esc(byQ[q].key)}">${qlabel(q)}</option>`
+    : `<option value="" disabled>${qlabel(q)} – no data yet</option>`
+  ).join('');
+
+  $('#qr').value=cur.key;
+}
+
+ function pickYear(y){const idx=periodsIndex(),avail=idx.filter(p=>p.year===y).sort((a,b)=>qrank(a.quarter)-qrank(b.quarter));
  if(!avail.length){fillPeriods();return}
  const keepQ=(idx.find(p=>p.key===st.per)||{}).quarter;
  st.per=(avail.find(p=>p.quarter===keepQ)||avail[0]).key;fillPeriods();applyPeriod();fillFilters();render()}
@@ -373,7 +413,22 @@ if(uploadError){
 $('#col').onchange=e=>{st.c=e.target.value;st.p='ALL';fillFilters();render()};
 $('#prog').onchange=e=>{st.p=e.target.value;render()};
 $('#yr').onchange=e=>pickYear(+e.target.value);
-$('#qr').onchange=e=>{if(!e.target.value)return;st.per=e.target.value;applyPeriod();fillFilters();render()};
+$('#qr').onchange=async e=>{
+  if(!e.target.value)return;
+
+  st.per=e.target.value;
+
+  const idx=periodsIndex();
+  const selected=idx.find(p=>p.key===st.per);
+
+  if(selected && String(selected.key).startsWith('shared-')){
+    await loadSharedWorkbook(selected.year,selected.quarter);
+  }else{
+    applyPeriod();
+    fillFilters();
+    render();
+  }
+};
 $('#delp').onclick=()=>{const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per);if(!cur||cur.key==='__embedded__')return;
  if($('#delp').dataset.armed!=='1'){$('#delp').dataset.armed='1';$('#delp').textContent='Confirm?';$('#delp').title='Click again within a few seconds to remove this period';
   clearTimeout(window.__delTimer);window.__delTimer=setTimeout(()=>{$('#delp').dataset.armed='';$('#delp').textContent='✕';$('#delp').title='Remove this uploaded period'},4000);return}
