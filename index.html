@@ -336,17 +336,37 @@ function pickYear(y){const idx=periodsIndex(),avail=idx.filter(p=>p.year===y).so
  if(!avail.length){fillPeriods();return}
  const keepQ=(idx.find(p=>p.key===st.per)||{}).quarter;
  st.per=(avail.find(p=>p.quarter===keepQ)||avail[0]).key;fillPeriods();applyPeriod();fillFilters();render()}
-let pendingWb=null,pendingName=null;
+let pendingWb=null,pendingName=null,pendingFile=null;
 function msg(t){$('#amsg').textContent=t}
-function closeAddbox(){pendingWb=null;pendingName=null;$('#addbox').style.display='none';msg('');$('#asave').dataset.armed='';$('#asave').textContent='Save'}
+function closeAddbox(){pendingWb=null;pendingName=null;pendingFile=null;$('#addbox').style.display='none';msg('');$('#asave').dataset.armed='';$('#asave').textContent='Save'}
 function openAddbox(wb,name){pendingWb=wb;pendingName=name;$('#ay').value=new Date().getFullYear();$('#aq').value='Q4';msg('');$('#asave').dataset.armed='';$('#asave').textContent='Save';$('#addfields').style.display=wb?'contents':'none';$('#addbox').style.display='flex'}
-function savePending(){if(!pendingWb)return;
+async function savePending(){if(!pendingWb)return;
  const year=parseInt($('#ay').value,10),quarter=$('#aq').value;
  if(!year||year<2000||year>2100){msg('Please enter a valid 4-digit year.');return}
  const rowsMap=extractRowsMap(pendingWb),match=periodsIndex().find(p=>p.year===year&&p.quarter===quarter);
  if(match&&$('#asave').dataset.armed!=='1'){$('#asave').dataset.armed='1';$('#asave').textContent='Click Save again to replace';
   msg(`FY ${year} ${quarter} already has data${match.key==='__embedded__'?' (the initial workbook)':''}. Saving again will replace it.`);return}
  const label=`FY ${year} ${quarter}`,kept=rawStored().filter(p=>!(p.year===year&&p.quarter===quarter)),key='p'+Date.now();
+ if(!pendingFile){
+  msg('No workbook file is available for upload.');
+  return;
+}
+
+const safeQuarter = quarter.replace(/\s+/g,'-');
+const storagePath = `${year}/${safeQuarter}.xlsx`;
+
+const { error: uploadError } = await supabaseClient.storage
+  .from('extension-workbooks')
+  .upload(storagePath, pendingFile, {
+    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    upsert: true
+  });
+
+if(uploadError){
+  console.error(uploadError);
+  msg('Could not upload workbook to shared storage: ' + uploadError.message);
+  return;
+}                            
  if(!lsSet(LS_ROWS(key),rowsMap))msg('This browser could not store the workbook (storage may be full or disabled). It will be available only until you leave this page.');
  kept.push({key,year,quarter,label,savedAt:Date.now()});lsSet(LS_IDX,kept);
  st.per=key;st.c='ALL';st.p='ALL';fillPeriods();applyPeriod();fillFilters();render();closeAddbox()}
@@ -360,7 +380,7 @@ $('#delp').onclick=()=>{const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)
  clearTimeout(window.__delTimer);$('#delp').dataset.armed='';$('#delp').textContent='✕';$('#delp').title='Remove this uploaded period';
  try{localStorage.removeItem(LS_ROWS(cur.key))}catch(e){}lsSet(LS_IDX,rawStored().filter(p=>p.key!==cur.key));st.per='__embedded__';fillPeriods();applyPeriod();fillFilters();render()};
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{st.t=b.dataset.t;render()});
-$('#fx').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+$('#fx').onchange=e=>{const f=e.target.files[0];if(!f)return;pendingFile=f;const r=new FileReader();
  r.onerror=()=>{openAddbox(null,f.name);msg('Could not read the file from this browser. Please try again.')};
  r.onload=x=>{try{const wb=XLSX.read(x.target.result,{type:'array'}),test=buildFromWb(wb);
    if(!Object.keys(test.cols).length){openAddbox(null,f.name);msg('No REF_* college sheets were found in "'+f.name+'". The workbook was not added.');return}
