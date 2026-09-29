@@ -398,9 +398,10 @@ const storagePath = `${year}/${safeQuarter}.xlsx`;
 const { error: uploadError } = await supabaseClient.storage
   .from('extension-workbooks')
   .upload(storagePath, pendingFile, {
-    contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    upsert: true
-  });
+  contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  upsert: true,
+  cacheControl: '0'
+});
 
 if(uploadError){
   console.error(uploadError);
@@ -492,14 +493,19 @@ async function loadSharedWorkbook(year, quarter) {
     const safeQuarter = quarter.replace(/\s+/g, '-');
     const storagePath = `${year}/${safeQuarter}.xlsx`;
 
-    const { data, error } = await supabaseClient.storage
-      .from('extension-workbooks')
-      .download(storagePath);
+    const cacheBuster = `?v=${Date.now()}`;
 
-    if (error) {
-      console.log('No shared workbook found. Using embedded workbook.', error.message);
-      return false;
-    }
+const response = await fetch(
+  `${SUPABASE_URL}/storage/v1/object/public/extension-workbooks/${storagePath}${cacheBuster}`,
+  { cache: 'no-store' }
+);
+
+if (!response.ok) {
+  console.log('No shared workbook found. Using embedded workbook.');
+  return false;
+}
+
+const data = await response.blob();
 
     const buffer = await data.arrayBuffer();
     const wb = XLSX.read(buffer, { type: 'array' });
