@@ -77,6 +77,9 @@ td.rd{background:color-mix(in srgb,var(--bad) 88%,var(--card));color:#fff;font-w
 tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var(--tint) 70%,var(--card))}
 .pb i.g{background:var(--leaf)}.pb i.a{background:var(--gold)}
 .up:hover{background:var(--gold);color:#17302A}
+
+/* Submitted documentary cells with hover details */
+td.ok[title]{cursor:pointer}
 </style></head><body><div class="wrap">
 <div class="hd"><div><small>BATANGAS STATE UNIVERSITY<br>TNEU ARASOF-Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><button id="adminLogin" class="up" type="button">🔐 Admin Login</button><label id="adminUpload" class="up" style="display:none;">▯ Add a quarter / year workbook (.xlsx)<input type="file" id="fx" accept=".xlsx,.xls" hidden></label><br><span id="src" style="opacity:.85"></span></div></div>
 <div class="sc"><b style="align-self:center;font-size:13px">▼ Report scope</b><div><label>YEAR</label><select id="yr" class="sm"></select></div><div><label>QUARTER</label><div style="display:flex;gap:4px"><select id="qr" class="sm"></select><button id="delp" class="up" style="padding:3px 8px;border-color:var(--bd);color:var(--g)" title="Remove this uploaded period">✕</button></div></div><div class="grow"><label>COLLEGE</label><select id="col"></select></div><div class="grow"><label>EXTENSION PROGRAM</label><select id="prog"></select></div></div>
@@ -304,7 +307,7 @@ function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cm
  <div style="margin-bottom:8px">${P('College → Program → Project → Activity',fyLabel(),tbl(S,8,['Act. No.','Activity Title','Target Impl. Date','Actual Impl. Date','Status','Budget Allocation','Budget Utilization','Utilization Rate'],rows)+'<div class="nt" style="padding:0 10px 6px">↪ = expected/rescheduled date · Not Met - Early/Delayed = implemented outside its original target quarter · * official rate with no reported utilization amount · N/A ≠ ₱0.</div>','np')}</div>
  <div class="g3">${L('Key Highlights',ins)}${L('Next Steps',nxt)}</div>`}
 /* ---- SECTION C ---- */
-const T=['Attendance','Evaluation Report','Terminal Report','Monitoring Tool','Monitoring the Progress','Rescheduling Letters'],DI={S:'✔ ',D:'◷ ',P:'⚠ ',N:''},DK={S:'ok',D:'am',P:'rd',N:'na'};
+const T=['Attendance','Evaluation Report','Terminal Report','Monitoring Tool','Monitoring the Progress','Rescheduling Letters'],DI={S:'',D:'◷ ',P:'⚠ ',N:''},DK={S:'ok',D:'am',P:'rd',N:'na'};
 function docTodo(A,idx){const Dl=A.filter(a=>a.docs&&dc(a.docs[idx])==='D'),Pl=A.filter(a=>a.docs&&dc(a.docs[idx])==='P'),out=[];
  if(Dl.length)out.push(`Upcoming: ${esc(groupNote(Dl))}`);if(Pl.length)out.push(`⚠ Pending/Overdue: ${esc(groupNote(Pl))}`);return out}
 function terminalTodo(S){const byProj={};S.acts.filter(a=>a.proj.no!=null).forEach(a=>{const k=a.col+'|'+a.prog+'|'+a.proj.key;(byProj[k]=byProj[k]||[]).push(a)});const lines=[];
