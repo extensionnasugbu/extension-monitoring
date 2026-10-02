@@ -117,8 +117,18 @@ const timeScore=days=>days==null?null:days<=5?{t:'T5',p:5}:days<=10?{t:'T4',p:4}
 const docTip=(a,l)=>{const sd=submittedDate(l),id=parseDateLike(a.a);if(!sd||!id)return '';const days=dayDiff(id,sd),sc=timeScore(days);return `Implementation Date: ${fmtDate(id)}\nDate Submitted: ${fmtDate(sd)}\nDays after implementation: ${days} day${days===1?'':'s'}\nIPCR Timeliness Rating: ${sc.p}`};
 /* IPCR timeliness: score each submitted documentary requirement from the activity's actual implementation date to its encoded submission date. T5=<=5 days, T4=6-10, T3=11-15, T2=16-20, T1=>20. */
 const timelinessRows=A=>A.flatMap(a=>(a.docs||[]).map((l,i)=>{const sd=submittedDate(l),id=parseDateLike(a.a);if(!sd||!id)return null;const days=dayDiff(id,sd),sc=timeScore(days);return sc?{a,i,sd,id,days,score:sc.p,band:sc.t}:null}).filter(Boolean));
-const timelinessM=A=>{const r=timelinessRows(A),n=r.length,sum=r.reduce((x,z)=>x+z.score,0),avg=n?sum/n:null,on=r.filter(z=>z.days<=5).length;return{r,n,avg,on,rate:n?on/n*100:null}};
-const timeRating=x=>x==null?'N/A':(+x.toFixed(2))+' / 5';
+/* Method 2: average the submission delay in calendar days first, then convert that project average to one IPCR Timeliness Rating.
+   IPCR bands: 5 = within 7 days; 4 = 8-14; 3 = 15-30; 2 = more than 30 days.
+   Rating 1 is reserved for no participation in an approved extension program/project, not for a late document submission. */
+const projectTimeScore=days=>days==null?null:days<=7?5:days<=14?4:days<=30?3:2;
+const timelinessM=A=>{
+ const r=timelinessRows(A),n=r.length;
+ const totalDays=r.reduce((x,z)=>x+z.days,0),avgDays=n?totalDays/n:null;
+ const avg=projectTimeScore(avgDays);
+ const on=r.filter(z=>z.days<=7).length;
+ return{r,n,totalDays,avgDays,avg,on,rate:n?on/n*100:null};
+};
+const timeRating=x=>x==null?'N/A':String(x);
 
 const isPct=t=>/^Percentage|Rate$/i.test(t);
 const dc=l=>/^submitted/i.test(l)?'S':/^not yet/i.test(l)?'D':/pending|overdue/i.test(l)?'P':'N';
@@ -281,7 +291,7 @@ function vO(S){const m=M(S.acts),I=S.ind,lv=S.level,K=[],met=I.filter(i=>i.st===
  const tablePanel=P(lv==='ALL'?'College Performance Overview':lv==='COL'?'Program Overview':'Project Overview','as of Q'+((asOf%4)+1)+' '+Math.floor(asOf/4),`<div class="tw"><table class="ovt">${'<tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>'+rows}</table></div>`,'np');
  const timeCards=lv==='PROG'?U.map(u=>{const tm=timelinessM(u.A),ttl=`${esc(u.lab)}${u.full?' - '+esc(u.full):''}`;const detail=tm.n?`${tm.n} dated submitted requirement${tm.n===1?'':'s'} · ${tm.on} within 5 days (${pf(tm.rate)})`:'No submitted requirement has both an implementation date and an encoded submission date yet.';const tip=tm.n?mktip(`${ttl} IPCR Timeliness Rating: ${timeRating(tm.avg)}.`,`${tm.n} submitted documentary requirement(s) have computable dates; ${tm.on} were submitted within 5 days.`,`Scoring: 5 = ≤5 days; 4 = 6–10; 3 = 11–15; 2 = 16–20; 1 = >20 days.`):`${ttl} IPCR Timeliness Rating: N/A.\nA rating is computed only when both the actual implementation date and documentary submission date are available.`;return card('◷',ttl,timeRating(tm.avg),tm.avg==null?null:tm.avg/5*100,detail,tip)}).join(''):'';
  const timePanel=lv==='PROG'?P('IPCR Timeliness by Project','Rating is based on dated submitted documentary requirements',`<div class="k" style="padding:10px">${timeCards||'<div class="nt">No projects available for timeliness computation.</div>'}</div><div class="nt" style="padding:0 10px 10px">Computation per submitted requirement: Date Submitted − Actual Implementation Date. Rating: 5 = ≤5 days; 4 = 6–10 days; 3 = 11–15 days; 2 = 16–20 days; 1 = more than 20 days. Project rating = average of all computable submitted requirements under that project. N/A records are excluded.</div>`,'np'):'';
- return`<div class="k k5">${K.join('')}</div>${lv==='PROG'?`<div style="margin-bottom:8px">${timePanel}</div><div style="margin-bottom:8px">${tablePanel}</div>`:''}
+ return`<div class="k k5">${K.join('')}</div>${lv==='PROG'?`<div style="margin-bottom:8px"></div><div style="margin-bottom:8px">${tablePanel}</div>`:''}
  <div class="g4">${P('Implementation Status Distribution','',dn(stt,m.n,'Activities'),'chart')}${lv!=='PROG'?perfByPanel:P('Budget Performance','',bpanel(m))}${P('Documentary Compliance','',dn([['Submitted',m.s,'#2F8F5B'],['Not Yet Due',m.d,'#DDEBE3'],['Pending / Overdue',m.p,'#B4472F']],m.ap,'Documents'),'chart')}</div>
  ${lv!=='PROG'?`<div style="margin-bottom:8px">${P('Budget Performance','',bpanel(m))}</div>`:''}<div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
 /* ---- SECTION A ---- */
@@ -335,6 +345,25 @@ function todoPanel(S){const A=S.acts,resch=A.filter(a=>a.docs&&dc(a.docs[5])==='
   block('Monitoring the Progress - per program, semi-annual (Aug-Dec); due now once all its activities are done',monitoringTodo(S,4)),
   resch.length?block('Rescheduling Letters - pending/overdue only',[`⚠ ${esc(groupNote(resch))}`]):''].filter(Boolean);
  return parts.length?parts.join(''):'<div class="nt">Nothing outstanding right now - all applicable requirements are either submitted or not yet due.</div>'}
+
+function projectTimelinessPanel(S){
+ const byProj=new Map();
+ S.acts.filter(a=>a.proj&&a.proj.no!=null).forEach(a=>{
+  const k=[a.col,a.prog,a.proj.key].join('|');
+  if(!byProj.has(k))byProj.set(k,{a0:a,A:[]});
+  byProj.get(k).A.push(a);
+ });
+ const items=[...byProj.values()].sort((x,y)=>(x.a0.proj.no||0)-(y.a0.proj.no||0));
+ if(!items.length)return '<div class="nt">No projects available for timeliness computation.</div>';
+ return items.map(x=>{
+  const tm=timelinessM(x.A),a=x.a0;
+  const title=`Project ${esc(a.proj.no)} - ${esc(a.proj.name||a.proj.key||'')}`;
+  const rating=tm.avg==null?'N/A':String(tm.avg);
+  const avgDays=tm.avgDays==null?'N/A':(+tm.avgDays.toFixed(2)).toString();
+  const tip=tm.n?`Method 2 — Average Days First\nTotal delay days: ${tm.totalDays}\nComputable submissions: ${tm.n}\nAverage delay: ${avgDays} day${tm.avgDays===1?'':'s'}\nIPCR Timeliness Rating: ${rating}\n\n5 = within 7 days; 4 = 8–14 days; 3 = 15–30 days; 2 = more than 30 days.`:'IPCR Timeliness Rating: N/A\nNo submitted requirement has both required dates.';
+  return `<div class="todo-cat" title="${esc(tip)}"><div class="todo-lines"><div>• <b>${title}</b> - <b>${rating}</b></div></div></div>`;
+ }).join('')+`<div class="nt" style="padding-top:6px"><b>Method 2:</b> average the calendar days of all computable submissions in each project first, then assign one rating: 5 = ≤7 days · 4 = 8–14 · 3 = 15–30 · 2 = &gt;30. Rating 1 applies to no participation in an approved extension program/project.</div>`;
+}
 function vC(S){const m=M(S.acts),ty=(i,c)=>m.cells.filter(x=>x.i===i&&x.c===c).length,{s,d,p,na,ap,due}=m;
  const K=card('◔','On-Time Submission Rate',due?pf(ratio(s,due)):'N/A',due?ratio(s,due):null,`${s} of ${due} currently due requirements submitted`,due?mktip(`On-Time Submission Rate: ${pf(ratio(s,due))}.`,`${s} of ${due} currently due requirements submitted.`,vsTarget(ratio(s,due),TARGETS.submission),advice(ratio(s,due),TARGETS.submission,'submission')):'On-Time Submission Rate: N/A.\nNo requirements are currently due.')+card('▤','Documents Submitted',s,ratio(s,ap),`${s} of ${ap} applicable requirements`,mktip(`Documents Submitted: ${s} of ${ap} applicable requirements (${pf(ratio(s,ap))}).`,`${na} N/A requirements are excluded from this count.`,`${d} more are not yet due and ${p} are pending/overdue.`))+card('⚠','Pending / Overdue Requirements',p,ratio(p,ap),p?`${p} outstanding`:'None outstanding',mktip(`Pending / Overdue Requirements: ${p}.`,p?`These were already due but are still outstanding, across ${m.pend.length} activities.`:'Nothing is outstanding right now.',p?'Clear these first - they directly lower the On-Time Submission Rate.':'Keep watching deadlines so none slip into overdue.'))+card('▦','Upcoming (Not Yet Due)',d,ratio(d,ap),`${d} of ${ap} applicable requirements`,mktip(`Upcoming (Not Yet Due): ${d}.`,`${d} of ${ap} applicable requirements have not reached their deadline yet.`,'They are not counted against the On-Time Submission Rate; prepare them ahead of the deadline so they do not become overdue.'));
  const rows=a=>`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td>${(a.docs||T.map(()=>'N/A')).map(l=>{const c=dc(l),tip=c==='S'?docTip(a,l):'';return`<td class="c ${DK[c]}"${tip?` title="${esc(tip)}"`:''}>${DI[c]}${esc(/^submitted/i.test(l)?'Submitted':l)}</td>`}).join('')}</tr>`;
@@ -343,7 +372,7 @@ function vC(S){const m=M(S.acts),ty=(i,c)=>m.cells.filter(x=>x.i===i&&x.c===c).l
  const pu=[...new Set(m.pend.map(a=>a.col+(a.prog===NOP?'':' · '+a.prog)))],nyd=m.A.filter(a=>(a.docs||[]).some(l=>dc(l)==='D')).length;
  const ins=[`On-time submission rate ${due?pf(ratio(s,due)):'N/A'}: ${s} of ${due} currently due requirements submitted.`,`${s} of ${ap} applicable requirements (${pf(ratio(s,ap))}) submitted.`,`${d} requirements (${pf(ratio(d,ap))}) not yet due, across ${nyd} activities.`,p?`${p} requirements pending/overdue across ${m.pend.length} activities${pu.length?' ('+esc(pu.join(', '))+')':''}.`:'No pending or overdue requirements.',`${na} N/A requirements excluded from all computations.`];
  const dueNow=[...new Set([...monProgs(S,3),...monProgs(S,4)].filter(p=>p.done).map(p=>p.label))],tI=T.indexOf('Terminal Report'),nxt=[p?`Clear the ${p} pending/overdue requirements first${pu.length?': '+esc(pu.join(', ')):''}.`:null,`Track ${d} not-yet-due requirements as their activities are implemented.`,`Ensure ${ty(tI,'D')+ty(tI,'P')} outstanding terminal reports are submitted upon completion.`,dueNow.length?`Submit the Monitoring Tool and Monitoring the Progress this quarter for programs whose activities are all completed: ${esc(dueNow.join(', '))}.`:null,'Validate submissions against deadlines and keep the monitoring log current.'].filter(Boolean);
- return`<div class="k">${K}</div><div class="g2">${P('Status of Report and Documentary Requirements',fyLabel(),tbl(S,8,['Act. No.','Activity Title',...T],rows)+'<div class="nt" style="padding:0 10px 6px">Terminal Report: one per project, shown on the project\'s last activity, and required only for projects finishing in Quarter 3, 2026 or later.</div>','np')}<div class="col">${P('Document Status Distribution','',dn([['Submitted',s,'#2F8F5B'],['Not Yet Due',d,'#DDEBE3'],['Pending / Overdue',p,'#B4472F']],ap,'Documents'),'chart')}${P('Submission Status by Document Type','',bc)}${P('To Do List','',todoPanel(S),'todobox')}</div></div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+ return`<div class="k">${K}</div><div class="g2">${P('Status of Report and Documentary Requirements',fyLabel(),tbl(S,8,['Act. No.','Activity Title',...T],rows)+'<div class="nt" style="padding:0 10px 6px">Terminal Report: one per project, shown on the project\'s last activity, and required only for projects finishing in Quarter 3, 2026 or later.</div>','np')}<div class="col">${P('Document Status Distribution','',dn([['Submitted',s,'#2F8F5B'],['Not Yet Due',d,'#DDEBE3'],['Pending / Overdue',p,'#B4472F']],ap,'Documents'),'chart')}${P('IPCR Timeliness Rating per Project','',projectTimelinessPanel(S),'todobox')}</div></div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
 /* ---- 6. RENDER / EVENTS ---- */
 function fillFilters(){const cs=Object.entries(DB.cols);$('#col').innerHTML='<option value="ALL">All Colleges</option>'+cs.map(([k,c])=>`<option value="${esc(k)}">${esc(k)} - ${esc(c.name)}</option>`).join('');$('#col').value=st.c;
  const ps=st.c==='ALL'?[]:[...new Set(DB.cols[st.c].acts.map(a=>a.prog))];$('#prog').innerHTML='<option value="ALL">All Programs</option>'+ps.map(p=>`<option value="${esc(p)}">${esc(p)}${DB.cols[st.c].progFull[p]?' - '+esc(DB.cols[st.c].progFull[p]):''}</option>`).join('');$('#prog').value=st.p;$('#prog').disabled=st.c==='ALL'}
