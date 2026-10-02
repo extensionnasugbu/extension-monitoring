@@ -97,7 +97,21 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 /*CORE*/
 const S1=x=>x==null?'':String(x).replace(/\s+/g,' ').trim(),nt=x=>S1(x).toLowerCase();
 const num=x=>typeof x==='number'?x:(typeof x==='string'&&/^-?\d+(\.\d+)?$/.test(x.trim())?parseFloat(x):null);
-const qv=s=>{const m=/Q([1-4]),?\s*(\d{4})/i.exec(s||'');return m?+m[2]*4+ +m[1]-1:null};
+const parseDateLike=v=>{
+ if(v==null||v==='')return null;
+ if(v instanceof Date&&!isNaN(v))return v;
+ if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);return isNaN(d)?null:d}
+ const s=String(v).trim();
+ if(/^\d{5}(?:\.\d+)?$/.test(s)){const n=+s;if(n>20000&&n<80000)return new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000)}
+ let m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/.exec(s);if(m){const d=new Date(+m[3],+m[1]-1,+m[2]);return isNaN(d)?null:d}
+ m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);return isNaN(d)?null:d}
+ const d=new Date(s);return isNaN(d)?null:d};
+const qv=s=>{const m=/Q([1-4]),?\s*(\d{4})/i.exec(String(s||''));if(m)return +m[2]*4+ +m[1]-1;const d=parseDateLike(s);return d?d.getFullYear()*4+Math.floor(d.getMonth()/3):null};
+const fmtDate=v=>{const d=parseDateLike(v);return d?d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):S1(v)};
+const submittedDate=v=>{if(!/^submitted/i.test(String(v||'')))return null;const m=String(v).match(/(\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{1,2}-\d{1,2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);return m?parseDateLike(m[1]):null};
+const dayDiff=(a,b)=>{const x=parseDateLike(a),y=parseDateLike(b);return x&&y?Math.round((y-x)/86400000):null};
+const timeScore=days=>days==null?null:days<=5?{t:'T5',p:5}:days<=10?{t:'T4',p:4}:days<=15?{t:'T3',p:3}:days<=20?{t:'T2',p:2}:{t:'T1',p:1};
+const docTip=(a,l)=>{const sd=submittedDate(l),id=parseDateLike(a.a);if(!sd||!id)return '';const days=dayDiff(id,sd),sc=timeScore(days);return `Implementation Date: ${fmtDate(id)}\nDate Submitted: ${fmtDate(sd)}\nDays after implementation: ${days} day${days===1?'':'s'}\nTimeliness: ${sc.t} — ${sc.p} point${sc.p===1?'':'s'}`};
 const isPct=t=>/^Percentage|Rate$/i.test(t);
 const dc=l=>/^submitted/i.test(l)?'S':/^not yet/i.test(l)?'D':/pending|overdue/i.test(l)?'P':'N';
 const NOP='(No program listed)',asOf=new Date().getFullYear()*4+Math.floor(new Date().getMonth()/3);
@@ -313,7 +327,7 @@ function todoPanel(S){const A=S.acts,resch=A.filter(a=>a.docs&&dc(a.docs[5])==='
  return parts.length?parts.join(''):'<div class="nt">Nothing outstanding right now - all applicable requirements are either submitted or not yet due.</div>'}
 function vC(S){const m=M(S.acts),ty=(i,c)=>m.cells.filter(x=>x.i===i&&x.c===c).length,{s,d,p,na,ap,due}=m;
  const K=card('◔','On-Time Submission Rate',due?pf(ratio(s,due)):'N/A',due?ratio(s,due):null,`${s} of ${due} currently due requirements submitted`,due?mktip(`On-Time Submission Rate: ${pf(ratio(s,due))}.`,`${s} of ${due} currently due requirements submitted.`,vsTarget(ratio(s,due),TARGETS.submission),advice(ratio(s,due),TARGETS.submission,'submission')):'On-Time Submission Rate: N/A.\nNo requirements are currently due.')+card('▤','Documents Submitted',s,ratio(s,ap),`${s} of ${ap} applicable requirements`,mktip(`Documents Submitted: ${s} of ${ap} applicable requirements (${pf(ratio(s,ap))}).`,`${na} N/A requirements are excluded from this count.`,`${d} more are not yet due and ${p} are pending/overdue.`))+card('⚠','Pending / Overdue Requirements',p,ratio(p,ap),p?`${p} outstanding`:'None outstanding',mktip(`Pending / Overdue Requirements: ${p}.`,p?`These were already due but are still outstanding, across ${m.pend.length} activities.`:'Nothing is outstanding right now.',p?'Clear these first - they directly lower the On-Time Submission Rate.':'Keep watching deadlines so none slip into overdue.'))+card('▦','Upcoming (Not Yet Due)',d,ratio(d,ap),`${d} of ${ap} applicable requirements`,mktip(`Upcoming (Not Yet Due): ${d}.`,`${d} of ${ap} applicable requirements have not reached their deadline yet.`,'They are not counted against the On-Time Submission Rate; prepare them ahead of the deadline so they do not become overdue.'));
- const rows=a=>`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td>${(a.docs||T.map(()=>'N/A')).map(l=>{const c=dc(l);return`<td class="c ${DK[c]}">${DI[c]}${esc(l)}</td>`}).join('')}</tr>`;
+ const rows=a=>`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td>${(a.docs||T.map(()=>'N/A')).map(l=>{const c=dc(l),tip=c==='S'?docTip(a,l):'';return`<td class="c ${DK[c]}"${tip?` title="${esc(tip)}"`:''}>${DI[c]}${esc(/^submitted/i.test(l)?'Submitted':l)}</td>`}).join('')}</tr>`;
  const mx=Math.max(1,...T.flatMap((_,i)=>['S','D','P'].map(c=>ty(i,c)))),cc=[['S','#2F8F5B'],['D','#DDEBE3'],['P','#B4472F']];
  const bc=`<div style="display:flex;gap:12px;font-size:10px;margin-bottom:4px"><span><i class="sw" style="background:#2F8F5B"></i>Submitted</span><span><i class="sw" style="background:#DDEBE3"></i>Not Yet Due</span><span><i class="sw" style="background:#B4472F"></i>Pending / Overdue</span></div><div class="bc">${T.map((t,i)=>`<div><div class="bars">${cc.map(([c,co])=>{const lab=c==='S'?'Submitted':c==='D'?'Not Yet Due':'Pending / Overdue';return`<i style="height:${ty(i,c)/mx*100}%;background:${co}" title="${esc(t)} - ${lab}: ${ty(i,c)}"><b>${ty(i,c)}</b></i>`}).join('')}</div><span class="lbl">${t}</span></div>`).join('')}</div>`;
  const pu=[...new Set(m.pend.map(a=>a.col+(a.prog===NOP?'':' · '+a.prog)))],nyd=m.A.filter(a=>(a.docs||[]).some(l=>dc(l)==='D')).length;
