@@ -153,7 +153,8 @@ function parseSheet(rows,sheet){
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))})});
  const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
  R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
-normalizeTerminal(R.acts);
+/* Live Google Sheet is authoritative for all documentary requirement cells.
+   Do not relocate or normalize Terminal Report values; preserve the exact row/status/date from Section C. */
  if(!R.code)R.code=sheet.replace(/^REF_/i,'').replace(/_/g,' ');return R}
 function wbRowsFn(wb){return n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null})}
 function extractRowsMap(wb){const m={};wb.SheetNames.filter(n=>/^(CONSOLIDATED|REF_)/i.test(n)).forEach(n=>m[n]=wbRowsFn(wb)(n));return m}
