@@ -104,7 +104,17 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 <script>
 /*CORE*/
 const S1=x=>x==null?'':String(x).replace(/\s+/g,' ').trim(),nt=x=>S1(x).toLowerCase();
-const num=x=>typeof x==='number'?x:(typeof x==='string'&&/^-?\d+(\.\d+)?$/.test(x.trim())?parseFloat(x):null);
+const num=x=>{
+ if(typeof x==='number')return Number.isFinite(x)?x:null;
+ if(typeof x!=='string')return null;
+ let s=x.trim();if(!s)return null;
+ // Google Sheets may return formatted numeric cells (e.g. 11,600.00 or ₱11,600.00).
+ // Strip common display formatting while preserving genuine non-numeric notes such as N/A or For Disbursement.
+ s=s.replace(/\u00a0/g,' ').trim();
+ if(/^\(.*\)$/.test(s))s='-'+s.slice(1,-1);
+ s=s.replace(/^[₱$]\s*/,'').replace(/,/g,'').replace(/\s+/g,'');
+ return /^-?\d+(?:\.\d+)?$/.test(s)?parseFloat(s):null;
+};
 const parseDateLike=v=>{
  if(v==null||v==='')return null;
  if(v instanceof Date&&!isNaN(v))return v;
@@ -588,7 +598,9 @@ async function loadSharedWorkbook(year, quarter, exactPath=null) {
       livePayload=payload; const maps=yearMaps(payload); liveYears=Object.keys(maps).map(Number).sort((a,b)=>a-b);
       if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
       const current=+document.getElementById('yr').value;
-      loadLiveYear(liveYears.includes(current)?current:liveYears[liveYears.length-1]);
+      const keepC=st.c, keepP=st.p;
+       loadLiveYear(liveYears.includes(current)?current:liveYears[liveYears.length-1]);
+       if(keepC==='ALL'||DB.cols[keepC]){st.c=keepC;if(keepC==='ALL'){st.p='ALL'}else{const ps=new Set(DB.cols[keepC].acts.map(a=>a.prog));st.p=(keepP==='ALL'||ps.has(keepP))?keepP:'ALL'}fillFilters();render();}
       statusEl.textContent='● LIVE GOOGLE SHEET';
       statusEl.title='Dashboard data is loaded directly from Google Sheets. Last refresh: '+new Date().toLocaleString();
     }catch(err){
