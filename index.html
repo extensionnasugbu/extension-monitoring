@@ -113,6 +113,9 @@ const num=x=>{
  s=s.replace(/\u00a0/g,' ').trim();
  if(/^\(.*\)$/.test(s))s='-'+s.slice(1,-1);
  s=s.replace(/^[₱$]\s*/,'').replace(/,/g,'').replace(/\s+/g,'');
+ // Live Google Sheets returns percentage cells as formatted strings such as 97% or 91%.
+ // Keep the dashboard's existing 0-100 percentage convention by stripping only the % sign.
+ if(/^-?\d+(?:\.\d+)?%$/.test(s)) return parseFloat(s.slice(0,-1));
  return /^-?\d+(?:\.\d+)?$/.test(s)?parseFloat(s):null;
 };
 const parseDateLike=v=>{
