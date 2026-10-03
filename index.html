@@ -383,7 +383,7 @@ function render(){const S=scope();$('#view').textContent=S.level==='ALL'?'All Co
  document.querySelectorAll('.v').forEach(v=>v.classList.toggle('on',v.id==='v'+st.t));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===st.t));
 }
 /* ---- Multi-period storage (per-browser, via localStorage): fixed Q1-Q4 per Year; latest upload for a quarter always wins ---- */
-const LS_IDX='ext_periods_index',LS_ROWS=k=>'ext_period_rows_'+k,EMB_Y=2026,EMB_Q='Q3';
+const LS_IDX='ext_periods_index',LS_ROWS=k=>'ext_period_rows_'+k; let EMB_Y=2026,EMB_Q='Q3';
 const QORD=['Q1','Q2','Q3','Q4'],qrank=q=>{const i=QORD.indexOf(q);return i<0?99:i};
 function lsGet(k){try{const v=localStorage.getItem(k);return v==null?null:JSON.parse(v)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
