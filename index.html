@@ -537,7 +537,7 @@ async function savePending(){if(!pendingWb||!pendingFile)return;
 $('#col').onchange=e=>{st.c=e.target.value;st.p='ALL';fillFilters();render()};
 $('#prog').onchange=e=>{st.p=e.target.value;render()};
 $('#yr').onchange=e=>pickYear(+e.target.value);
-$('#qr').onchange=async e=>{if(!e.target.value)return;st.per=e.target.value;const selected=periodsIndex().find(p=>p.key===st.per);if(selected&&selected.shared)await loadSharedWorkbook(selected.year,selected.quarter,selected.path);else{applyPeriod();fillFilters();render()}};
+$('#qr').onchange=async e=>{if(!e.target.value)return;const selected=periodsIndex().find(p=>p.key===e.target.value);if(selected&&selected.live){loadLiveYear(selected.year,selected.quarter);return}st.per=e.target.value;if(selected&&selected.shared)await loadSharedWorkbook(selected.year,selected.quarter,selected.path);else{applyPeriod();fillFilters();render()}};
 $('#delp').onclick=async()=>{const cur=periodsIndex().find(p=>p.key===st.per);if(!cur||!cur.shared)return;
  if($('#delp').dataset.armed!=='1'){$('#delp').dataset.armed='1';$('#delp').textContent='Confirm?';clearTimeout(window.__delTimer);window.__delTimer=setTimeout(()=>{$('#delp').dataset.armed='';$('#delp').textContent='✕'},4000);return}
  $('#delp').dataset.armed='';$('#delp').textContent='✕';
@@ -643,16 +643,70 @@ render();
     }
     return 'Q'+best;
   }
-  function loadLiveYear(year){
-    const maps=yearMaps(livePayload), rowsMap=maps[year]; if(!rowsMap)return false;
+  /* Quarterly snapshots in CONSOLIDATED_PERFORMANCE are stored vertically using
+     Year + Quarter + Indicator_ID. Discover the available snapshots for the selected year. */
+  function liveQuartersForYear(rowsMap,year){
+    const set=new Set();
+    for(const [name,rows] of Object.entries(rowsMap||{})){
+      if(!/^CONSOLIDATED/i.test(name))continue;
+      let h=-1,yi=-1,qi=-1,ii=-1;
+      for(let x=0;x<rows.length;x++){
+        const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+        yi=z.indexOf('year'); qi=z.indexOf('quarter');
+        ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+        if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+      }
+      if(h<0)continue;
+      for(let x=h+1;x<rows.length;x++){
+        const r=rows[x]||[], y=+r[yi], q=S1(r[qi]).toUpperCase();
+        if(y===+year&&/^Q[1-4]$/.test(q)&&/^PI-\d+/i.test(S1(r[ii])))set.add(q);
+      }
+    }
+    return QORD.filter(q=>set.has(q));
+  }
+  /* Convert only the selected quarterly PI snapshot back to the dashboard's original
+     Section A column shape. REF_* activity sheets remain untouched and are filtered
+     cumulatively through the selected quarter. */
+  function rowsMapForLiveQuarter(rowsMap,year,quarter){
+    const out={};
+    for(const [name,rows0] of Object.entries(rowsMap||{})){
+      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
+      if(!/^CONSOLIDATED/i.test(name)){out[name]=rows;continue}
+      let h=-1,yi=-1,qi=-1,ii=-1;
+      for(let x=0;x<rows.length;x++){
+        const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+        yi=z.indexOf('year'); qi=z.indexOf('quarter');
+        ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+        if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+      }
+      if(h<0){out[name]=rows;continue}
+      // Header expected by parseSheet: Indicator_ID, Performance Indicator, Source, Target, Accomplishment, Variance, Status, Remarks/Target per Office.
+      rows[h]=(rows[h]||[]).slice(ii);
+      for(let x=h+1;x<rows.length;x++){
+        const r=rows[x]||[], id=S1(r[ii]);
+        if(!/^PI-\d+/i.test(id))continue;
+        const keep=(+r[yi]===+year && S1(r[qi]).toUpperCase()===quarter);
+        rows[x]=keep?r.slice(ii):[];
+      }
+      out[name]=rows;
+    }
+    return out;
+  }
+  function loadLiveYear(year,requestedQuarter=null){
+    const maps=yearMaps(livePayload), rawRowsMap=maps[year]; if(!rawRowsMap)return false;
+    let qs=liveQuartersForYear(rawRowsMap,year);
+    if(!qs.length)qs=[detectQuarter(rawRowsMap)];
+    const currentQ='Q'+(Math.floor(new Date().getMonth()/3)+1);
+    const q=(requestedQuarter&&qs.includes(requestedQuarter))?requestedQuarter:(qs.includes(currentQ)?currentQ:qs[qs.length-1]);
+    const rowsMap=rowsMapForLiveQuarter(rawRowsMap,year,q);
     DB=buildFromRowsMap(rowsMap);
     if(!DB||!Object.keys(DB.cols||{}).length)throw new Error('No REF_* college data could be parsed for '+year+'.');
-    const q=detectQuarter(rowsMap); EMB_Y=year; EMB_Q=q;
-    sharedPeriods=[{key:`live-${year}-${q}`,year,quarter:q,label:`FY ${year} ${q} · Live Google Sheet`,shared:false}];
+    EMB_Y=year; EMB_Q=q;
+    sharedPeriods=qs.map(x=>({key:`live-${year}-${x}`,year,quarter:x,label:`FY ${year} ${x} · Live Google Sheet`,shared:false,live:true}));
     st.per=`live-${year}-${q}`; st.c='ALL'; st.p='ALL';
     document.getElementById('yr').innerHTML=liveYears.map(y=>`<option value="${y}">${y}</option>`).join('');
     document.getElementById('yr').value=year;
-    document.getElementById('qr').innerHTML=`<option value="${st.per}">Quarter ${q.slice(1)}</option>`;
+    document.getElementById('qr').innerHTML=qs.map(x=>`<option value="live-${year}-${x}">Quarter ${x.slice(1)}</option>`).join('');
     document.getElementById('qr').value=st.per;
     srcEl.textContent=`FY ${year} ${q} · Live from Google Sheets`;
     fillFilters(); render(); return true;
