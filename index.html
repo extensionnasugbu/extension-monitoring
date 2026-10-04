@@ -183,7 +183,7 @@ function parseSheet(rows,sheet){
    if(m=/^(?:College|Department):\s*(.+?)(?:\s*\(([^)]+)\))?(?:\s+-\s+(.+))?$/i.exec(sa)){if(!R.name){R.name=S1(m[1]);R.code=m[2]?S1(m[2]):''}
     if(m[3]){const pm=/\(([^)]+)\)/.exec(m[3]);if(pm)R.progFull[pm[1]]=S1(m[3])}return}
    if(/^Prepared by/i.test(sa)){sec=null;const j=rows.findIndex((x,i)=>i>ri&&typeof x[0]==='string'&&x[0].trim());if(j>0)R.sign=[0,3,5].map(c=>[S1(rows[ri][c]),S1(rows[j][c]),S1(rows[j+1]&&rows[j+1][c])]);return}
-   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))||(sec==='E'&&/activity title/.test(hb))?1:0; return}
+   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))||((sec==='D'||sec==='E')&&/activity title/.test(hb))?1:0; return}
    if(m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*(\d+)\s*(.*)$/i.exec(sa)){prog=S1(m[1]);let rest=m[3].trim();const fm=/\(([^()]*IMPLEMENTATION[^()]*)\)\s*$/i.exec(rest);if(fm)rest=rest.slice(0,fm.index).trim();proj={key:sa,no:+m[2],title:S1(rest),fy:fm?S1(fm[1]):''};return}
    if(/^PROGRAM\s/i.test(sa)){prog=S1(sa.replace(/^PROGRAM\s+/i,''));proj={key:sa,no:null,title:'',fy:''};return}
    if(/^(CONSOLIDATED|Extension Services)/i.test(sa))return}
@@ -192,8 +192,8 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0)})});
- /* Re-read Section E from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0)})});
+ /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
    const clean=[]; let ep=NOP;
@@ -208,7 +208,7 @@ function parseSheet(rows,sheet){
  }
  const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
  R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
- /* Attach Section E values primarily by activity title. Program labels in merged rows are not reliable enough to be the primary key in the live Google Sheet payload. */
+ /* Attach Activity Profile values primarily by activity title. Program labels in merged rows are not reliable enough to be the primary key in the live Google Sheet payload. */
  const allE=R.erows.slice(), epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
  R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(!e)e=allE.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
 /* Live Google Sheet is authoritative for all documentary requirement cells.
@@ -232,14 +232,11 @@ function selectedPeriodQuarterValue(){
  return qn>=1&&qn<=4 ? Number(cur.year)*4+qn-1 : null;
 }
 function activityBelongsToSelectedQuarter(a){
- /* Live Google Sheet periods are already isolated to the exact Year + Quarter block
-    before parsing. Do not re-filter them by target implementation date: doing so makes
-    Q4 cumulative and can leak Q3 activities into Q4. Legacy uploaded workbooks keep
-    the old target-quarter filter because they may not contain explicit quarter blocks. */
- const cur=periodsIndex().find(p=>p.key===st.per);
- if(cur&&cur.live)return true;
  const pq=selectedPeriodQuarterValue();
  if(pq==null)return true;
+ /* Quarterly dashboards are cumulative "as of" reports. Include activities targeted
+    from Q1 up to the selected quarter. For example, Q4 shows Q1 + Q2 + Q3 + Q4,
+    while activities scheduled after the selected quarter remain excluded. */
  const tq=qv(a&&a.t);
  return tq==null ? false : tq<=pq;
 }
@@ -650,73 +647,82 @@ render();
   }
   /* Quarterly snapshots in CONSOLIDATED_PERFORMANCE are stored vertically using
      Year + Quarter + Indicator_ID. Discover the available snapshots for the selected year. */
-  /* Find the Year + Quarter blocks that actually exist anywhere in the annual
-     Google Sheet payload. This supports both the vertical CONSOLIDATED_PERFORMANCE
-     table and repeated quarterly A-E blocks in REF_* college sheets. */
-  function quarterMention(v,year){
-    const t=S1(v); if(!t)return null;
-    let m=t.match(/(?:QUARTER\s*|\bQ)([1-4])\b/i); if(!m)return null;
-    const ym=t.match(/\b(20\d{2})\b/); if(ym&&+ym[1]!==+year)return null;
-    return 'Q'+m[1];
+  function quarterTagFromRow(row){
+    for(const cell of (row||[])){
+      const m=S1(cell).match(/Extension\s+Services\s*-\s*Quarter\s*([1-4])\s*FY\s*(20\d{2})/i);
+      if(m)return {quarter:'Q'+m[1],year:+m[2]};
+    }
+    return null;
   }
+  /* Discover the quarterly blocks that are actually present in the Google Sheet.
+     REF_* sheets are authoritative for block availability; the consolidated snapshot
+     table is also checked for backward compatibility. */
   function liveQuartersForYear(rowsMap,year){
     const set=new Set();
     for(const [name,rows] of Object.entries(rowsMap||{})){
-      /* Structured Year / Quarter table (Section A consolidated data). */
-      for(let x=0;x<rows.length;x++){
-        const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
-        const yi=z.indexOf('year'), qi=z.indexOf('quarter');
-        if(yi>=0&&qi>=0){
-          for(let j=x+1;j<rows.length;j++){
-            const r=rows[j]||[],q=S1(r[qi]).toUpperCase();
-            if(+r[yi]===+year&&/^Q[1-4]$/.test(q))set.add(q);
-          }
+      if(/^REF_/i.test(name)){
+        for(const r of rows||[]){
+          const tag=quarterTagFromRow(r);
+          if(tag&&tag.year===+year)set.add(tag.quarter);
         }
       }
-      /* Explicit block labels in REF sheets, e.g. QUARTER 3, Q3 2026, FY 2026 Q4. */
-      for(const r of rows)for(const cell of (r||[])){
-        const q=quarterMention(cell,year); if(q)set.add(q);
+      if(/^CONSOLIDATED/i.test(name)){
+        let h=-1,yi=-1,qi=-1,ii=-1;
+        for(let x=0;x<(rows||[]).length;x++){
+          const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+          yi=z.indexOf('year'); qi=z.indexOf('quarter');
+          ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+          if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+        }
+        if(h>=0)for(let x=h+1;x<rows.length;x++){
+          const r=rows[x]||[], y=+r[yi], q=S1(r[qi]).toUpperCase();
+          if(y===+year&&/^Q[1-4]$/.test(q)&&/^PI-\d+/i.test(S1(r[ii])))set.add(q);
+        }
       }
     }
     return QORD.filter(q=>set.has(q));
   }
-  function rowQuarterMarker(row,year){
-    for(const cell of (row||[])){const q=quarterMention(cell,year);if(q)return q}
-    return null;
-  }
-  /* Keep exactly one repeated quarterly block from a REF_* annual sheet. A block starts
-     at an explicit quarter marker and ends immediately before the next quarter marker.
-     Preamble rows before the first marker are retained so College/Department identity
-     remains available to parseSheet. All A-E sections inside the chosen block therefore
-     stay together: performance, activities/budget, documentary requirements, other
-     quarterly sections, and the SDG/activity-profile section. */
-  function exactQuarterRefRows(rows,year,quarter){
-    const markers=[];
-    for(let i=0;i<rows.length;i++){const q=rowQuarterMarker(rows[i],year);if(q)markers.push({i,q})}
-    if(!markers.length)return rows.map(r=>Array.isArray(r)?r.slice():[]);
-    /* Collapse adjacent/repeated labels belonging to the same quarter header. */
-    const blocks=[];
-    for(const m of markers){
-      const last=blocks[blocks.length-1];
-      if(last&&last.q===m.q&&m.i-last.i<=2)continue;
-      blocks.push(m);
+  /* Keep ONLY the requested quarter's repeated report blocks in every REF_* sheet.
+     This prevents a later Q4 block from being parsed into Q3 (and vice versa) across
+     Sections A, B, C and D, including SDG/activity-profile fields. */
+  function selectRefQuarterBlocks(rows,year,quarter){
+    const out=[]; let active=false, sawTaggedBlock=false;
+    for(const r0 of rows||[]){
+      const r=Array.isArray(r0)?r0.slice():[];
+      const tag=quarterTagFromRow(r);
+      if(tag){
+        sawTaggedBlock=true;
+        active=(tag.year===+year && tag.quarter===quarter);
+        if(active)out.push(r);
+        continue;
+      }
+      // A new report title precedes each quarter tag. Hold it temporarily so a
+      // non-selected block cannot leak its title/content into the selected block.
+      if(/^CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT/i.test(S1(r[0]))){
+        out.push(['__REPORT_TITLE_PENDING__']);
+        continue;
+      }
+      if(active)out.push(r);
     }
-    const hit=blocks.find(b=>b.q===quarter); if(!hit)return [];
-    const pos=blocks.indexOf(hit), end=pos+1<blocks.length?blocks[pos+1].i:rows.length;
-    const pre=rows.slice(0,blocks[0].i).map(r=>Array.isArray(r)?r.slice():[]);
-    const body=rows.slice(hit.i,end).map(r=>Array.isArray(r)?r.slice():[]);
-    return pre.concat(body);
+    if(!sawTaggedBlock)return (rows||[]).map(r=>Array.isArray(r)?r.slice():[]);
+    // Restore report titles only immediately before selected Extension Services rows.
+    const clean=[];
+    for(let i=0;i<out.length;i++){
+      if(out[i]&&out[i][0]==='__REPORT_TITLE_PENDING__')continue;
+      if(i===0 || !/Extension\s+Services\s*-\s*Quarter/i.test(S1(out[i][0]))) clean.push(out[i]);
+      else clean.push(['CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT'],out[i]);
+    }
+    return clean;
   }
-  /* Produce an exact Year + Quarter snapshot for every dashboard source sheet. */
+  /* Build a quarter-specific rows map before the existing parser/calculations run. */
   function rowsMapForLiveQuarter(rowsMap,year,quarter){
     const out={};
     for(const [name,rows0] of Object.entries(rowsMap||{})){
-      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
       if(/^REF_/i.test(name)){
-        const isolated=exactQuarterRefRows(rows,year,quarter);
-        if(isolated.length)out[name]=isolated;
+        out[name]=selectRefQuarterBlocks(rows0,year,quarter);
         continue;
       }
+      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
       if(!/^CONSOLIDATED/i.test(name)){out[name]=rows;continue}
       let h=-1,yi=-1,qi=-1,ii=-1;
       for(let x=0;x<rows.length;x++){
@@ -725,16 +731,12 @@ render();
         ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
         if(yi>=0&&qi>=0&&ii>=0){h=x;break}
       }
-      if(h<0){
-        const isolated=exactQuarterRefRows(rows,year,quarter);
-        out[name]=isolated.length?isolated:rows;
-        continue;
-      }
+      if(h<0){out[name]=rows;continue}
       rows[h]=(rows[h]||[]).slice(ii);
       for(let x=h+1;x<rows.length;x++){
-        const r=rows[x]||[],id=S1(r[ii]);
+        const r=rows[x]||[], id=S1(r[ii]);
         if(!/^PI-\d+/i.test(id))continue;
-        rows[x]=(+r[yi]===+year&&S1(r[qi]).toUpperCase()===quarter)?r.slice(ii):[];
+        rows[x]=(+r[yi]===+year && S1(r[qi]).toUpperCase()===quarter)?r.slice(ii):[];
       }
       out[name]=rows;
     }
