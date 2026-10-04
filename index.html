@@ -251,55 +251,47 @@ function groupNote(acts){const g={};acts.forEach(a=>{const k=a.col+'\u0001'+a.pr
   return(pre?pre+' ':'')+actRanges(list.map(a=>a.n))}).join('; ')}
 function bpanel(m){const notes={};m.A.forEach(a=>{if(a.note)(notes[a.note]=notes[a.note]||[]).push(a)});const nl=Object.entries(notes).sort((x,y)=>y[1].length-x[1].length).slice(0,3);
  return`<div class="bp"><div><span>Allocated</span><b>${peso(m.al?m.tb:null)}</b></div><div><span>Utilized</span><b>${peso(m.tu||m.bb?m.tu:null)}</b></div><div><span>Utilization rate</span><b>${pf(m.rate)}</b></div></div>${m.rate==null?'':`<div class="pb"><i style="width:${Math.min(m.rate,100)}%"></i></div><div class="nt">Rate = ${peso(m.bt)} / ${peso(m.bb)} (activities with allocation and reported utilization).</div>`}<div class="nt">${m.noAl} of ${m.n} activities have no numeric allocation (N/A) - not counted as ₱0.${m.noUtil.length?` ${m.noUtil.length} allocated activities have no reported utilization.`:''}</div>${nl.map(([t,list])=>`<div class="nt">"${esc(t)}" - ${esc(groupNote(list))}</div>`).join('')}`}
+
+/* ---- EXECUTIVE OVERVIEW HELPERS ---- */
+const rowText=a=>[a.title,a.note,a.unote].filter(Boolean).join(' | ');
+const uniqText=(A,re)=>{const out=new Set();A.forEach(a=>{const txt=rowText(a);let m;const rx=new RegExp(re.source,re.flags.includes('g')?re.flags:re.flags+'g');while((m=rx.exec(txt))){const v=S1(m[1]||m[0]).replace(/^[\s:=-]+|[\s;,.]+$/g,'');if(v)out.add(v);if(!rx.global)break}});return [...out]};
+const indFind=(I,...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
+const indActual=(I,...res)=>{const i=indFind(I,...res);return i&&i.a!=null?i.a:null};
+const countCompletedPrograms=A=>{const g=new Map();A.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!g.has(k))g.set(k,[]);g.get(k).push(a)});return [...g.values()].filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length};
+const countPrograms=A=>new Set(A.filter(a=>a.prog!==NOP).map(a=>a.col+'|'+a.prog)).size;
+const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig],service:[/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig],sdg:[/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig]};return uniqText(A,patterns[kind][0])};
+function distFromText(A,kind){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const g=new Map();A.forEach(a=>{const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt))){String(m[1]).split(/\s*,\s*|\s*\/\s*|\s*&\s*/).map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))}});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
+function distPanel(title,items,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);return P(title,'',dn(segs,total,unit)+`<div class="nt" style="margin-top:8px">${items.map(([n,v])=>`<b>${esc(n)}</b> — ${v}`).join('<br>')}</div>`,'chart')}
+function satisfactionFromIndicators(I,kind){const re=kind==='quality'?/(quality\s*(?:and|&)\s*relevance|quality|relevance)/i:/timeliness/i;const rows=I.filter(i=>re.test(i.pi));const vals={P:0,F:0,S:0,VS:0,E:0};let found=false;rows.forEach(i=>{const text=(i.pi+' '+i.rem);for(const k of Object.keys(vals)){const m=new RegExp('(?:^|\\b)'+k+'\\s*[:=-]\\s*(\\d+(?:\\.\\d+)?)','i').exec(text);if(m){vals[k]+=+m[1];found=true}}});if(!found)return null;const den=Object.values(vals).reduce((a,b)=>a+b,0),num=vals.S+vals.VS+vals.E;return{...vals,den,num,rate:den?num/den*100:null}}
+
 /* ---- OVERVIEW (All Colleges / College / Program) ---- */
-function vO(S){const m=M(S.acts),I=S.ind,lv=S.level,K=[],met=I.filter(i=>i.st==='MET').length,p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i);
- if(lv!=='PROG'&&I.length){K.push(card('◎','Performance Indicators Met',`${met} / ${I.length}`,ratio(met,I.length),`${pf(ratio(met,I.length))} fully MET`,mktip(`Performance Indicators Met: ${met} of ${I.length} (${pf(ratio(met,I.length))}).`,I.filter(i=>i.st!=='MET').length?`Not yet MET: ${I.filter(i=>i.st!=='MET').map(idl).join(', ')}.`:'Every indicator is MET.',advice(ratio(met,I.length),100,'indicators'))));
-  if(p2)K.push(card('⚙','Approved Extension Programs',`${nv(p2.a)} / ${nv(p2.t)}`,p2.a==null?null:ratio(p2.a,p2.t),'conducted vs. target',mktip(`Approved Extension Programs: ${nv(p2.a)} of ${nv(p2.t)} conducted (${esc(p2.st)}).`,p2.a==null?'The accomplishment is not reported in the workbook.':gapTip(p2.a,p2.t,' program(s)'),'A program only counts once its approved activities are implemented, so completing the remaining activities is what moves this figure.')));
-  if(p3)K.push(card('●','Beneficiary Achievement',p3.a==null?'N/A':pf(ratio(p3.a,p3.t)),p3.a==null?null:ratio(p3.a,p3.t),`${nv(p3.a)} of ${nv(p3.t)} weighted target`,mktip(`Beneficiary Achievement: ${p3.a==null?'N/A':pf(ratio(p3.a,p3.t))}.`,p3.a==null?'No accomplishment is reported in the workbook, so the rate cannot be computed.':`${p3.a} of ${p3.t} weighted beneficiaries (weighted by training length) have been served.`,p3.a==null?'Encode the accomplishment so reach can be tracked against the target.':(p3.a>=p3.t?'Beneficiary reach target is met - sustain outreach quality.':`${p3.t-p3.a} more weighted beneficiaries are needed - prioritize the remaining scheduled trainings.`))));
-  if(p4)K.push(card('★','Beneficiary Satisfaction',pv(p4,p4.a),p4.a==null?null:ratio(p4.a,p4.t),`Target ${pv(p4,p4.t)} | Actual ${pv(p4,p4.a)}`,mktip(`Beneficiary Satisfaction: ${pv(p4,p4.a)} (target ${pv(p4,p4.t)}).`,p4.a==null?'No accomplishment is reported.':(p4.a>=p4.t?'Trainees rate the trainings at or above the target for quality and relevance.':'Trainee ratings are below the target.'),p4.a==null?'':(p4.a>=p4.t?'Keep the current training design and facilitators.':'Review trainee feedback and adjust content or facilitation before the next batch.'))));const p5=rol(I,/notarized Memorandum/i);if(p5)K.push(card('✎','Notarized MOU / MOA',`${nv(p5.a)} / ${nv(p5.t)}`,p5.a==null?null:ratio(p5.a,p5.t),'notarized MOU/MOA vs. target',mktip(`Notarized MOU / MOA: ${nv(p5.a)} of ${nv(p5.t)} (${esc(p5.st)}).`,p5.a==null?'The accomplishment is not reported.':gapTip(p5.a,p5.t,' agreement(s)'),'Notarized agreements are the formal basis for partner-supported activities - follow up pending signings early.')))}
- const actCard=card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.fi} for implementation`,actTip(m));
- const schedVal=ratio(m.ot,m.cmp),schedCard=card('▦','Schedule Adherence',pf(schedVal),schedVal,`${m.ot} of ${m.cmp} due-or-implemented activities hit their exact target quarter`,
-  mktip(`Schedule Adherence: ${pf(schedVal)}.`,`${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly.`,vsTarget(schedVal,TARGETS.schedule),advice(schedVal,TARGETS.schedule,'schedule')));
- const projCard=card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),'all activities implemented',projTip(m));
- const budCard=card('₱','Budget Utilization Rate',pf(m.rate),m.rate,`${peso(m.bt)} of ${peso(m.bb)}`,
-  mktip(`Budget Utilization Rate: ${pf(m.rate)} (${peso(m.bt)} of ${peso(m.bb)}).`,vsTarget(m.rate,TARGETS.budget),advice(m.rate,TARGETS.budget,'budget')));
- const docVal=m.due?ratio(m.s,m.due):null,docCard=card('◔','On-Time Submission Rate',m.due?pf(docVal):'N/A',docVal,`${m.s} of ${m.due} currently due submitted`,
-  mktip(`On-Time Submission Rate: ${m.due?pf(docVal):'N/A'}.`,`${m.s} of ${m.due} currently due requirements submitted.`,vsTarget(docVal,TARGETS.submission),advice(docVal,TARGETS.submission,'submission')));
- K.push(projCard,actCard,schedCard,docCard,budCard);
- const key=lv==='ALL'?a=>a.col:lv==='COL'?a=>a.prog:a=>a.proj.key||a.prog,G=new Map();S.acts.forEach(a=>{const k=key(a);G.has(k)||G.set(k,[]);G.get(k).push(a)});
- const U=[...G].map(([k,A])=>({k,A,m:M(A),lab:lv==='ALL'?k:lv==='COL'?(k===NOP?k:k):(A[0].proj.no!=null?'P'+A[0].proj.no:k),
-  full:lv==='ALL'?DB.cols[k].name:lv==='COL'?(DB.cols[st.c].progFull[k]||''):(A[0].proj.title||''),
-  sub:lv==='ALL'?new Set(A.map(a=>a.prog)).size:lv==='COL'?new Set(A.map(a=>a.proj.key)).size:'-'}));
- const bene=c=>{const I2=DB.cols[c].ind,i=rol(I2,/external beneficiaries/i);return i&&i.a!=null?`${i.a}/${i.t} <small>(${pf(ratio(i.a,i.t))})</small>`:'N/A'};
- const pim=c=>{const I2=DB.cols[c].ind;return I2.length?`${I2.filter(i=>i.st==='MET').length}/${I2.length}`:'N/A'};
- const showPI=lv==='ALL',rows=U.map(u=>`<tr><td class="nw"><b>${esc(u.lab)}</b> ${esc(u.full)}</td><td class="c">${u.sub}</td><td class="c">${u.m.n}</td><td class="c">${u.m.im}</td><td class="c">${u.m.fi}</td><td class="c">${u.m.n-u.m.im-u.m.fi}</td>${showPI?`<td class="c">${bene(u.k)}</td><td class="c">${pim(u.k)}</td>`:''}<td class="c">${pf(u.m.rate)}${u.m.bb?`<br><small>${peso(u.m.bt)} / ${peso(u.m.bb)}</small>`:''}</td><td class="c">${u.m.due?pf(ratio(u.m.s,u.m.due)):'N/A'}<br><small>${u.m.s} sub · ${u.m.d} NYD · ${u.m.p} pend</small></td></tr>`).join('');
- const uh=lv==='ALL'?['College','Programs']:lv==='COL'?['Extension Program','Projects']:['Project',''];
- const head=[...uh,'Activities','Implemented','For Impl.','Other status',...(showPI?['Beneficiary (actual/target)','Indicators MET']:[]),'Budget Utilization','On-Time Submission'];
- const rt=[['Implemented',u=>ratio(u.m.im,u.m.n)],['Budget utilization',u=>u.m.rate],['Docs submitted ÷ applicable',u=>u.m.ap?ratio(u.m.s,u.m.ap):null]],cc=['#2F8F5B','#E3A72F','#DDEBE3'];
- const chart=`<div style="display:flex;gap:12px;font-size:10px;margin-bottom:4px">${rt.map((r,i)=>`<span><i class="sw" style="background:${cc[i]}"></i>${r[0]}</span>`).join('')}</div><div class="bc">${U.map(u=>`<div><div class="bars">${rt.map((r,i)=>{const v=r[1](u);return`<i style="height:${v==null?0:Math.min(v,100)}%;background:${cc[i]}" title="${esc(u.lab)} - ${esc(r[0])}: ${v==null?'N/A':pf(v)}"><b>${v==null?'N/A':Math.round(v)+'%'}</b></i>`}).join('')}</div><span class="lbl">${esc(u.lab)}</span></div>`).join('')}</div>`;
- const stt=Object.entries(m.stat).map(([k,v],i)=>[k,v,SC[k]||PAL[(i+2)%6]]);
- const ul=lv==='ALL'?'college':lv==='COL'?'program':'project',lab=u=>u.lab,list=f=>U.filter(f).map(u=>`${esc(lab(u))} (${f.v(u)})`).join(', ');
- const nonmet=I.filter(i=>i.st!=='MET');
- const ins=[`${m.im} of ${m.n} activities implemented (${pf(ratio(m.im,m.n))}); ${m.fi} for implementation${m.n-m.im-m.fi?`; ${m.n-m.im-m.fi} other status (${Object.entries(m.stat).filter(([k])=>k!=='Implemented'&&k!=='For Implementation').map(([k,v])=>v+' '+esc(k)).join(', ')})`:''}.`,
-  m.pjn?`${m.pjc} of ${m.pjn} projects completed (all activities implemented).`:null,
-  I.length&&lv!=='PROG'?`${met} of ${I.length} performance indicators MET${nonmet.length?`; not yet MET: ${nonmet.map(i=>`${esc(idl(i))} (${pv(i,i.a)} of ${pv(i,i.t)})`).join(', ')}`:''}. ${advice(ratio(met,I.length),100,'indicators')}`:null,
-  m.rate!=null?`Budget utilization ${pf(m.rate)}: ${peso(m.bt)} utilized of ${peso(m.bb)} allocated (activities with reported utilization). ${vsTarget(m.rate,TARGETS.budget)} ${advice(m.rate,TARGETS.budget,'budget')}`:'No utilization rate can be computed from numeric budget records.',
-  m.cmp?`Schedule adherence ${pf(schedVal)}: ${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly. ${vsTarget(schedVal,TARGETS.schedule)} ${advice(schedVal,TARGETS.schedule,'schedule')}`:null,
-  m.due?`On-time submission rate ${pf(docVal)}: ${m.s} of ${m.due} currently due requirements submitted. ${vsTarget(docVal,TARGETS.submission)} ${advice(docVal,TARGETS.submission,'submission')}`:null,
-  `${m.noAl} of ${m.n} activities have no numeric allocation (N/A), not treated as ₱0.`,
-  `Documents: ${m.s} of ${m.ap} applicable requirements submitted; ${m.d} not yet due; ${m.p} pending/overdue; ${m.na} N/A excluded.`].filter(Boolean);
- const pu=U.filter(u=>u.m.p),bu=U.filter(u=>u.m.fi);
- const nxt=[m.fi?`Implement the ${m.fi} remaining activities${bu.length>1?': '+bu.map(u=>`${esc(u.lab)} (${u.m.fi})`).join(', '):''}.`:null,
-  m.behind.length?`${m.behind.length} for-implementation activities are past their target quarter - confirm schedules${m.behind.length<4?': '+m.behind.map(a=>esc(short(a))).join('; '):''}.`:null,
-  m.p?`Clear ${m.p} pending/overdue documentary requirements${pu.length>1||lv==='ALL'?' - '+pu.map(u=>`${esc(u.lab)} (${u.m.p})`).join(', '):''}.`:null,
-  m.d?`Track ${m.d} not-yet-due documents as activities are completed.`:null,
-  m.noUtil.length?`Record utilization for ${m.noUtil.length} allocated activities without a reported amount.`:null,
-  nonmet.length&&lv!=='PROG'?`Address indicator gaps: ${nonmet.map(i=>esc(idl(i))).join(', ')}.`:null].filter(Boolean);
- const perfByTitle='Performance by '+ul[0].toUpperCase()+ul.slice(1),perfByPanel=P(perfByTitle,'rates in %',chart);
- const tablePanel=P(lv==='ALL'?'College Performance Overview':lv==='COL'?'Program Overview':'Project Overview','as of Q'+((asOf%4)+1)+' '+Math.floor(asOf/4),`<div class="tw"><table class="ovt">${'<tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>'+rows}</table></div>`,'np');
- return`<div class="k k5">${K.join('')}</div>${lv==='PROG'?`<div style="margin-bottom:8px">${tablePanel}</div>`:''}
- <div class="g4">${P('Implementation Status Distribution','',dn(stt,m.n,'Activities'),'chart')}${lv!=='PROG'?perfByPanel:P('Budget Performance','',bpanel(m))}${P('Documentary Compliance','',dn([['Submitted',m.s,'#2F8F5B'],['Not Yet Due',m.d,'#DDEBE3'],['Pending / Overdue',m.p,'#B4472F']],m.ap,'Documents'),'chart')}</div>
- ${lv!=='PROG'?`<div style="margin-bottom:8px">${P('Budget Performance','',bpanel(m))}</div>`:''}<div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+function vO(S){
+ const m=M(S.acts),I=S.ind,A=S.acts;
+ const progTotal=countPrograms(A),progDone=countCompletedPrograms(A);
+ const partnerships=indActual(I,/partnership/i,/MOU/i,/MOA/i);
+ const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
+ const faculty=indActual(I,/faculty/i);
+ const students=indActual(I,/student/i);
+ const bene=indActual(I,/external beneficiaries/i,/beneficiar/i);
+ const q=satisfactionFromIndicators(I,'quality'),t=satisfactionFromIndicators(I,'timeliness');
+ const qInd=indFind(I,/quality.*relevance/i,/percentage of trainees/i),tInd=indFind(I,/timeliness/i);
+ const qRate=q?q.rate:(qInd&&qInd.a!=null?qInd.a:null),tRate=t?t.rate:(tInd&&tInd.a!=null?tInd.a:null);
+ const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
+ const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
+ const K=[
+  card('⚙','Extension Programs Completed',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),'all activities implemented'),
+  card('▣','Extension Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),'all project activities implemented',projTip(m)),
+  card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.fi} for implementation`,actTip(m)),
+  card('✎','Partnerships Established',partnerships==null?'N/A':partnerships,null,'based on reported partnership/MOU/MOA indicator'),
+  card('◎','SDGs Achieved',sdgCount||'N/A',null,sdgItems.length?`${sdgItems.length} distinct SDG entries detected`:'based on reported SDG indicator'),
+  card('●','Faculty Involved',faculty==null?'N/A':faculty,null,'reported faculty involvement'),
+  card('◆','Students Involved',students==null?'N/A':students,null,'reported student involvement'),
+  card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,'reported beneficiaries reached'),
+  card('★','Quality & Relevance Satisfaction',qRate==null?'N/A':pf(qRate),qRate,q?`${q.num} S+VS+E of ${q.den} total ratings`:'Uses reported indicator until P/F/S/VS/E counts are exposed in the live sheet'),
+  card('◷','Timeliness Satisfaction',tRate==null?'N/A':pf(tRate),tRate,t?`${t.num} S+VS+E of ${t.den} total ratings`:'Uses reported indicator until P/F/S/VS/E counts are exposed in the live sheet')
+ ];
+ return `<div class="k k5">${K.join('')}</div><div class="g4">${distPanel('Extension Agenda Distribution',agendaItems)}${distPanel('Community Service Distribution',serviceItems)}${distPanel('Extension Agenda Contribution',sdgItems,'SDG contributions')}</div>`;
+}
 /* ---- SECTION A ---- */
 function vA(S){const I=S.ind,lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
