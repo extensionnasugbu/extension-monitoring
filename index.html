@@ -234,11 +234,11 @@ function selectedPeriodQuarterValue(){
 function activityBelongsToSelectedQuarter(a){
  const pq=selectedPeriodQuarterValue();
  if(pq==null)return true;
- /* Quarterly workbooks are cumulative. The activity's TARGET implementation quarter
-    determines which quarter dashboard it belongs to, so earlier-quarter activities
-    are excluded from Q4 counts, SDG bars, and SDG hover details. */
+ /* Quarterly dashboards are cumulative "as of" reports. Include activities targeted
+    from Q1 up to the selected quarter. For example, Q4 shows Q1 + Q2 + Q3 + Q4,
+    while activities scheduled after the selected quarter remain excluded. */
  const tq=qv(a&&a.t);
- return tq==null ? false : tq===pq;
+ return tq==null ? false : tq<=pq;
 }
 function scope(){const codes=Object.keys(DB.cols),cs=st.c==='ALL'?codes:[st.c];let acts=cs.flatMap(c=>DB.cols[c].acts.map(a=>({...a,col:c})));
  acts=acts.filter(activityBelongsToSelectedQuarter);
