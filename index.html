@@ -400,7 +400,21 @@ function vO(S){
  const facultyPct=(faculty!=null&&totalFaculty!=null&&totalFaculty>0)?faculty/totalFaculty*100:null;
  const facultyReported=faculty!=null&&totalFaculty!=null;
  const students=pt.students!=null?pt.students:indActual(I,/student/i);
- const bene=indActual(I,/external beneficiaries/i,/beneficiar/i);
+ /* Beneficiaries Reached is activity-based, not the Section A cumulative beneficiary PI.
+    Count the trainees who actually rated each IMPLEMENTED activity using the
+    Quality & Relevance response total (P+F+S+VS+E). Restrict the count to the
+    selected fiscal year so prior-year activities (e.g. 2025) never carry into
+    a 2026 quarterly dashboard. The quarter scope is already cumulative through
+    the selected quarter via activityBelongsToSelectedQuarter(). */
+ const curPeriod=periodsIndex().find(p=>p.key===st.per);
+ const selectedYear=curPeriod&&curPeriod.year?Number(curPeriod.year):null;
+ const beneActs=A.filter(a=>{
+   if(a.s!=='Implemented'||!a.profile||!Array.isArray(a.profile.quality))return false;
+   const tq=qv(a.t);
+   return selectedYear==null || (tq!=null && Math.floor(tq/4)===selectedYear);
+ });
+ const bene=beneActs.reduce((sum,a)=>sum+a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0),0);
+ const beneReported=beneActs.some(a=>a.profile.quality.some(v=>(Number(v)||0)>0));
  const q=pt.q||satisfactionFromIndicators(I,'quality'),t=pt.t||satisfactionFromIndicators(I,'timeliness');
  const qInd=indFind(I,/quality.*relevance/i,/percentage of trainees/i),tInd=indFind(I,/timeliness/i);
  const qRate=q?q.rate:(qInd&&qInd.a!=null?qInd.a:null),tRate=t?t.rate:(tInd&&tInd.a!=null?tInd.a:null);
@@ -414,7 +428,7 @@ function vO(S){
   withHoverTip(card('◎','SDGs Addressed',sdgCount!=null?`${sdgCount} / 17`:'N/A',sdgCount!=null?ratio(sdgCount,17):null,sdgCount!=null?`${sdgCount} of 17 Sustainable Development Goals addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
   withHoverTip(card('●','Faculty Involved',facultyReported?`${faculty} / ${totalFaculty}`:'N/A',facultyPct,facultyReported?`${pf(facultyPct)} of faculty were involved in extension activities`:'No reported data'),facultyTipHtml(A)),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
-  card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
+  withHoverTip(card('◉','Beneficiaries Reached',beneReported?bene:'N/A',null,beneReported?`${bene} trainees rated implemented activities`:'No trainee ratings reported for implemented activities'),beneActs.length?`<div class="act-hover-tip project-status-list">${beneActs.map(a=>{const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0);return `<div class="act-tip-item project-status-item ${n>0?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${n>0?'✓ '+n+' Beneficiar'+(n===1?'y':'ies'):'○ No Rating Reported'}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`:''),
   withHoverTip(card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),ratingTipHtml(A,'quality')),
   withHoverTip(card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`),ratingTipHtml(A,'timeliness'))
  ];
