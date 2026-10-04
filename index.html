@@ -86,7 +86,7 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 .doc-tip b{font-weight:700;color:#17302A}
 .has-doc-tip:hover .doc-tip{display:block}
 </style></head><body><div class="wrap">
-<div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University <br> ARASOF-Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
+<div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University<br>ARASOF - Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
 <div class="sc"><b style="align-self:center;font-size:13px">▼ Report scope</b><div><label>YEAR</label><select id="yr" class="sm"></select></div><div><label>QUARTER</label><div style="display:flex;gap:4px"><select id="qr" class="sm"></select></div></div><div class="grow"><label>COLLEGE</label><select id="col"></select></div><div class="grow"><label>EXTENSION PROGRAM</label><select id="prog"></select></div></div>
 <div id="view" class="viewrow"></div>
 <div class="nt" id="pernote" style="margin:-4px 0 8px"></div>
@@ -265,7 +265,7 @@ function vO(S){const m=M(S.acts),I=S.ind,lv=S.level,K=[],met=I.filter(i=>i.st===
   mktip(`Budget Utilization Rate: ${pf(m.rate)} (${peso(m.bt)} of ${peso(m.bb)}).`,vsTarget(m.rate,TARGETS.budget),advice(m.rate,TARGETS.budget,'budget')));
  const docVal=m.due?ratio(m.s,m.due):null,docCard=card('◔','On-Time Submission Rate',m.due?pf(docVal):'N/A',docVal,`${m.s} of ${m.due} currently due submitted`,
   mktip(`On-Time Submission Rate: ${m.due?pf(docVal):'N/A'}.`,`${m.s} of ${m.due} currently due requirements submitted.`,vsTarget(docVal,TARGETS.submission),advice(docVal,TARGETS.submission,'submission')));
- K.push(...(lv==='PROG'?[projCard,actCard,schedCard,docCard,budCard]:[actCard,schedCard,projCard,budCard,docCard]));
+ K.push(projCard,actCard,schedCard,docCard,budCard);
  const key=lv==='ALL'?a=>a.col:lv==='COL'?a=>a.prog:a=>a.proj.key||a.prog,G=new Map();S.acts.forEach(a=>{const k=key(a);G.has(k)||G.set(k,[]);G.get(k).push(a)});
  const U=[...G].map(([k,A])=>({k,A,m:M(A),lab:lv==='ALL'?k:lv==='COL'?(k===NOP?k:k):(A[0].proj.no!=null?'P'+A[0].proj.no:k),
   full:lv==='ALL'?DB.cols[k].name:lv==='COL'?(DB.cols[st.c].progFull[k]||''):(A[0].proj.title||''),
