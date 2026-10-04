@@ -165,10 +165,24 @@ function parseSheet(rows,sheet){
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
   else if(sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0)})});
+ /* Re-read Section E from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
+ const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
+ if(eHeader>=0){
+   const clean=[]; let ep=NOP;
+   for(let i=eHeader+1;i<rows.length;i++){
+     const r=rows[i]||[], a=r[0], b=r[1], sa=S1(a);
+     if(/^Prepared by/i.test(sa))break;
+     if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
+     if(num(a)==null||!S1(b))continue;
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0)});
+   }
+   if(clean.length)R.erows=clean;
+ }
  const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
  R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
- const epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
- R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
+ /* Attach Section E values primarily by activity title. Program labels in merged rows are not reliable enough to be the primary key in the live Google Sheet payload. */
+ const allE=R.erows.slice(), epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
+ R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(!e)e=allE.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
 /* Live Google Sheet is authoritative for all documentary requirement cells.
    Do not relocate or normalize Terminal Report values; preserve the exact row/status/date from Section C. */
  if(!R.code)R.code=sheet.replace(/^REF_/i,'').replace(/_/g,' ');return R}
