@@ -203,7 +203,7 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:S1(r[18])})});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim()})});
  /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
@@ -213,7 +213,7 @@ function parseSheet(rows,sheet){
      if(/^Prepared by/i.test(sa))break;
      if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
      if(num(a)==null||!S1(b))continue;
-     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:S1(r[18])});
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim()});
    }
    if(clean.length)R.erows=clean;
  }
@@ -347,17 +347,22 @@ const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agen
 function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
 function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 function facultyNameList(v){
- const raw=S1(v).replace(/\r/g,'\n'); if(!raw)return[];
- // Faculty names in the live sheet may be separated by line breaks, semicolons, bullets,
- // pipes, or commas.  Treat commas as separators too; this prevents a whole comma-separated
- // roster from being counted as one faculty member.
- return raw.split(/\n|;|\||•|·|,(?=\s*[^,;\n|]+)/).map(x=>S1(x).replace(/^[•·\-–—]+\s*/,'' )).filter(Boolean);
+ const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim(); if(!raw)return[];
+ // Primary separators are the actual line breaks used in the Google Sheet, plus
+ // semicolons/bullets/pipes. If a payload has flattened the line breaks, split
+ // again whenever a new academic/professional title starts.
+ let parts=raw.split(/\n+|;|\||•|·/).map(x=>x.trim()).filter(Boolean);
+ const titleStart=/(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/g;
+ parts=parts.flatMap(x=>x.split(titleStart)).map(x=>x.trim().replace(/^[•·\-–—]+\s*/,'' )).filter(Boolean);
+ return parts;
 }
 function facultyKey(v){return S1(v).toLowerCase().replace(/\b(dr|prof|assoc|asst|mr|ms|mrs|engr|associate professor|assistant professor)\.?\b/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
 function facultyStats(A){
  const people=new Map();
- (A||[]).forEach(a=>{const p=a.profile;if(!p||!p.facultyNames)return;const seen=new Set();facultyNameList(p.facultyNames).forEach(name=>{const k=facultyKey(name);if(!k||seen.has(k))return;seen.add(k);if(!people.has(k))people.set(k,{name,count:0,implemented:0,pending:0,activities:[]});const person=people.get(k);person.count++;const done=a.s==='Implemented';if(done)person.implemented++;else person.pending++;person.activities.push(a)})});
- return [...people.values()].sort((a,b)=>b.count-a.count||a.name.localeCompare(b.name));
+ (A||[]).forEach(a=>{const p=a.profile;if(!p||!p.facultyNames)return;const seen=new Set();facultyNameList(p.facultyNames).forEach(name=>{const k=facultyKey(name);if(!k||seen.has(k))return;seen.add(k);if(!people.has(k))people.set(k,{name,count:0,implemented:0,pending:0,activities:[]});const person=people.get(k);person.count++;const done=/^implemented$/i.test(S1(a.s));if(done)person.implemented++;else person.pending++;person.activities.push(a)})});
+ const actSort=(a,b)=>((a.proj&&a.proj.no!=null?a.proj.no:9999)-(b.proj&&b.proj.no!=null?b.proj.no:9999))||((a.n||0)-(b.n||0))||S1(a.title).localeCompare(S1(b.title));
+ people.forEach(p=>p.activities.sort(actSort));
+ return [...people.values()].sort((a,b)=>a.name.localeCompare(b.name));
 }
 function facultyTipHtml(A){
  const f=facultyStats(A);if(!f.length)return '<div class="act-hover-tip"><div class="nt">No faculty names reported in the current scope.</div></div>';
