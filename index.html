@@ -66,13 +66,14 @@ small{color:var(--mut);font-size:9.5px}tr.cb small,.hd small{color:inherit}
 .act-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.act-tip-item:last-child{border-bottom:0}.act-tip-item div{margin:2px 0}.act-tip-item b{font-weight:700;color:var(--ink)}
 .card-dialog-backdrop{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.38);padding:20px;align-items:center;justify-content:center}
 .card-dialog-backdrop.open{display:flex}
-.card-dialog{width:min(520px,100%);max-height:min(76vh,650px);overflow:hidden;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.card-dialog{width:min(940px,100%);max-height:min(76vh,650px);overflow:hidden;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
 .card-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;background:var(--g);color:#fff}
 .card-dialog-head b{font:700 15px "Bricolage Grotesque","Public Sans",sans-serif}
 .card-dialog-close{border:0;background:transparent;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 2px}
 .card-dialog-body{padding:14px 16px;max-height:calc(min(76vh,650px) - 50px);overflow:auto;font-size:11.5px;line-height:1.55}
 .card-dialog-summary{white-space:pre-line;margin-bottom:8px}
 .card-dialog-body .act-hover-tip{display:block;position:static;transform:none;width:auto;min-width:0;max-width:none;max-height:none;overflow:visible;padding:0;border:0;border-radius:0;background:transparent;color:inherit;box-shadow:none;font-size:11px;pointer-events:auto}
+.card-dialog-body .project-status-item{padding:10px 12px;margin:0 0 7px;border:1px solid var(--bd);border-radius:7px;background:var(--card)}.card-dialog-body .project-status-item.is-pending{background:#f1f3f2}.project-status-head{display:flex;justify-content:flex-end;margin-bottom:4px}.project-status-badge{font-weight:700;font-size:10.5px}.is-complete .project-status-badge{color:var(--g2)}.is-pending .project-status-badge{color:var(--mut)}
 body.dialog-open{overflow:hidden}
 
 /* Extension Services Guide branding */
@@ -297,9 +298,10 @@ const projL=j=>j.no!=null?`PROJECT ${j.no}${j.title?' - '+esc(j.title):''}`:'';
 const progL=(c,p)=>p===NOP?p:esc(DB.cols[c].progFull[p]||p);
 const short=a=>`${a.col} · ${a.prog===NOP?'':a.prog+' · '}${a.proj.no!=null?'P'+a.proj.no+' ':''}Act. ${a.n}`;
 const fullProg=a=>a.prog===NOP?'—':(DB.cols[a.col]&&DB.cols[a.col].progFull[a.prog]||a.prog);
-const programTipHtml=A=>{const ps=[...new Set((A||[]).map(a=>fullProg(a)).filter(x=>x&&x!=='—'))];return ps.length?`<div class="act-hover-tip">${ps.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
-const projectTipHtml=A=>{const seen=new Set(),rows=[];(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!seen.has(k)){seen.add(k);rows.push([pr,pj])}});return rows.length?`<div class="act-hover-tip">${rows.map(([pr,pj])=>`<div class="act-tip-item"><div><b>Program</b> ${esc(pr)}</div><div><b>Project</b> ${esc(pj)}</div></div>`).join('')}</div>`:''};
-const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip">${A.map(a=>`<div class="act-tip-item"><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div>`};
+const programTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(a.prog===NOP)return;const pr=fullProg(a),k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,{pr,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Conducted':'○ Not Yet Conducted'}</span></div><div><b>Program</b> ${esc(x.pr)}</div></div>`).join('')}</div>`:''};
+const projectTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!groups.has(k))groups.set(k,{pr,pj,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Completed':'○ Not Yet Completed'}</span></div><div><b>Program</b> ${esc(x.pr)}</div><div><b>Project</b> ${esc(x.pj)}</div></div>`).join('')}</div>`:''};
+const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip project-status-list">${A.map(a=>{const done=a.s==='Implemented';return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ Implemented':'○ '+esc(a.s||'Not Yet Implemented')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`};
+const ratingTipHtml=(A,kind)=>{const key=kind==='quality'?'quality':'timeliness',label=kind==='quality'?'Quality':'Timeliness';const rows=(A||[]).filter(a=>a.profile&&Array.isArray(a.profile[key])).map(a=>{const x=a.profile[key],den=x.reduce((u,v)=>u+(Number(v)||0),0),num=(Number(x[2])||0)+(Number(x[3])||0)+(Number(x[4])||0),rate=den?num/den*100:null;return {a,den,rate}}).filter(x=>x.den>0);return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item"><div class="project-status-head"><span class="project-status-badge is-complete">${label}: ${pf(x.rate)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Rating breakdown</b> P: ${x.a.profile[key][0]||0} · F: ${x.a.profile[key][1]||0} · S: ${x.a.profile[key][2]||0} · VS: ${x.a.profile[key][3]||0} · E: ${x.a.profile[key][4]||0}</div></div>`).join('')}</div>`:''};
 const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';let t=String(row.rem||'').replace(/One\s*\(1\).*?(?:target|established)[^\n]*/ig,'').trim();let vals=t.split(/\n|;|\|/).map(x=>x.replace(/^\s*\d+[.)-]?\s*/, '').trim()).filter(Boolean);if(!vals.length&&row.rem)vals=[String(row.rem).trim()];return vals.length?`<div class="act-hover-tip">${vals.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
 const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
 const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
@@ -370,14 +372,14 @@ function vO(S){
  const K=[
   withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
   withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
-  withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A.filter(a=>a.s==='Implemented'))),
+  withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':partnerships,null,partnerships==null?'No reported data':`${partnerships} partnership${partnerships===1?'':'s'} established`),partnerTipHtml(I)),
   withHoverTip(card('◎','SDGs Addressed',sdgCount||'N/A',null,sdgCount?`${sdgCount} Sustainable Development Goal${sdgCount===1?'':'s'} addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
   card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} faculty member${faculty===1?'':'s'} involved`),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
-  card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),
-  card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`)
+  withHoverTip(card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),ratingTipHtml(A,'quality')),
+  withHoverTip(card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`),ratingTipHtml(A,'timeliness'))
  ];
  return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
 }
@@ -837,9 +839,13 @@ render();
     const label=(card.querySelector('.kh b')||{}).textContent||'Details';
     const nativeTip=card.getAttribute('title')||'';
     const drill=card.querySelector('.act-hover-tip');
-    title.textContent=label.trim();
+    const isProjects=/^Projects Completed$/i.test(label.trim());
+    const isPrograms=/^Programs Conducted$/i.test(label.trim());
+    const isActivities=/^Activities Implemented$/i.test(label.trim());
+    const cardCount=(card.querySelector('.kv')||{}).textContent||'';
+    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:label.trim();
     body.innerHTML='';
-    if(nativeTip){
+    if(nativeTip && !isProjects){
       const s=document.createElement('div');
       s.className='card-dialog-summary';
       s.textContent=nativeTip;
