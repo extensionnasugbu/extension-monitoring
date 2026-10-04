@@ -85,6 +85,24 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 .doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#f2f2f2;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
 .doc-tip b{font-weight:700;color:#17302A}
 .has-doc-tip:hover .doc-tip{display:block}
+
+/* Overview distribution charts: compact, aligned, readable */
+.g4.overview-charts{grid-template-columns:1fr 1fr 1.15fr;align-items:stretch}
+.g4.overview-charts>.p{min-height:300px}
+.dist-clean{width:100%;display:flex;flex-direction:column;gap:10px;align-self:stretch}
+.dist-clean .dr{justify-content:flex-start;align-items:center;flex-wrap:nowrap}
+.dist-clean .lg{flex:1;min-width:0}
+.dist-clean .lg div{white-space:normal;align-items:flex-start;line-height:1.3;margin:6px 0}
+.dist-clean .lg b{margin-left:auto;white-space:nowrap}
+.sdgbar{width:100%;display:flex;flex-direction:column;gap:9px;align-self:stretch}
+.sdgbar-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 62px;gap:10px;align-items:center}
+.sdgbar-label{font-size:10.5px;line-height:1.25;color:var(--tx);font-weight:600}
+.sdgbar-track{height:10px;background:var(--tint);border-radius:999px;overflow:hidden}
+.sdgbar-fill{height:100%;background:var(--leaf);border-radius:999px;min-width:4px}
+.sdgbar-value{text-align:right;font-size:10.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.chart-note{font-size:9.5px;color:var(--mut);margin-top:auto;padding-top:3px}
+@media(max-width:1000px){.g4.overview-charts{grid-template-columns:1fr 1fr}.g4.overview-charts>.p:last-child{grid-column:1/-1}}
+@media(max-width:700px){.g4.overview-charts{grid-template-columns:1fr}.g4.overview-charts>.p:last-child{grid-column:auto}.sdgbar-row{grid-template-columns:minmax(0,1fr) 90px 54px}}
 </style></head><body><div class="wrap">
 <div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University<br>ARASOF - Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
 <div class="sc"><b style="align-self:center;font-size:13px">▼ Report scope</b><div><label>YEAR</label><select id="yr" class="sm"></select></div><div><label>QUARTER</label><div style="display:flex;gap:4px"><select id="qr" class="sm"></select></div></div><div class="grow"><label>COLLEGE</label><select id="col"></select></div><div class="grow"><label>EXTENSION PROGRAM</label><select id="prog"></select></div></div>
@@ -280,7 +298,8 @@ const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agen
 function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
 function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 function profileTotals(A){let faculty=0,students=0,q=[0,0,0,0,0],t=[0,0,0,0,0],hasF=false,hasS=false,hasQ=false,hasT=false;A.forEach(a=>{const p=a.profile;if(!p)return;if(p.faculty!=null){faculty+=p.faculty;hasF=true}if(p.students!=null){students+=p.students;hasS=true}p.quality.forEach((v,i)=>{q[i]+=v;if(v)hasQ=true});p.timeliness.forEach((v,i)=>{t[i]+=v;if(v)hasT=true})});const sat=x=>{const den=x.reduce((a,b)=>a+b,0),num=x[2]+x[3]+x[4];return den?{den,num,rate:num/den*100}:null};return{faculty:hasF?faculty:null,students:hasS?students:null,q:hasQ?sat(q):null,t:hasT?sat(t):null}}
-function distPanel(title,items,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);return P(title,'',dn(segs,total,unit)+`<div class="nt" style="margin-top:8px">${items.map(([n,v])=>`<b>${esc(n)}</b> — ${v}`).join('<br>')}</div>`,'chart')}
+function distPanel(title,items,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);return P(title,'',`<div class="dist-clean">${dn(segs,total,unit)}</div>`,'chart')}
+function sdgPanel(items){if(!items.length)return P('SDG Contribution','','<div class="nt">No SDG contribution data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),mx=Math.max(...items.map(x=>x[1]),1);const rows=items.map(([n,v])=>`<div class="sdgbar-row" title="${esc(n)}: ${v} contribution${v===1?'':'s'} (${pf(ratio(v,total)||0)})"><div class="sdgbar-label">${esc(n)}</div><div class="sdgbar-track"><div class="sdgbar-fill" style="width:${v/mx*100}%"></div></div><div class="sdgbar-value">${v} · ${pf(ratio(v,total)||0)}</div></div>`).join('');return P('SDG Contribution','',`<div class="sdgbar">${rows}<div class="chart-note">${total} total SDG contribution${total===1?'':'s'} across ${items.length} distinct SDG${items.length===1?'':'s'}.</div></div>`,'chart')}
 function satisfactionFromIndicators(I,kind){const re=kind==='quality'?/(quality\s*(?:and|&)\s*relevance|quality|relevance)/i:/timeliness/i;const rows=I.filter(i=>re.test(i.pi));const vals={P:0,F:0,S:0,VS:0,E:0};let found=false;rows.forEach(i=>{const text=(i.pi+' '+i.rem);for(const k of Object.keys(vals)){const m=new RegExp('(?:^|\\b)'+k+'\\s*[:=-]\\s*(\\d+(?:\\.\\d+)?)','i').exec(text);if(m){vals[k]+=+m[1];found=true}}});if(!found)return null;const den=Object.values(vals).reduce((a,b)=>a+b,0),num=vals.S+vals.VS+vals.E;return{...vals,den,num,rate:den?num/den*100:null}}
 
 /* ---- OVERVIEW (All Colleges / College / Program) ---- */
@@ -310,7 +329,7 @@ function vO(S){
   card('★','Quality & Relevance Satisfaction',qRate==null?'N/A':pf(qRate),qRate,q?`${q.num} S+VS+E of ${q.den} total ratings`:'Calculated from activity-level P/F/S/VS/E trainee ratings'),
   card('◷','Timeliness Satisfaction',tRate==null?'N/A':pf(tRate),tRate,t?`${t.num} S+VS+E of ${t.den} total ratings`:'Calculated from activity-level P/F/S/VS/E trainee ratings')
  ];
- return `<div class="k k5">${K.join('')}</div><div class="g4">${distPanel('Extension Agenda Distribution',agendaItems)}${distPanel('Community Service Distribution',serviceItems)}${distPanel('Extension Agenda Contribution',sdgItems,'SDG contributions')}</div>`;
+ return `<div class="k k5">${K.join('')}</div><div class="g4 overview-charts">${distPanel('Extension Agenda Distribution',agendaItems)}${distPanel('Community Service Distribution',serviceItems)}${sdgPanel(sdgItems)}</div>`;
 }
 /* ---- SECTION A ---- */
 function vA(S){const I=S.ind,lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
