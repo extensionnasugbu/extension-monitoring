@@ -723,7 +723,10 @@ render();
       if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
       const current=+document.getElementById('yr').value;
       const keepC=st.c, keepP=st.p;
-       loadLiveYear(liveYears.includes(current)?current:liveYears[liveYears.length-1]);
+       const liveYear=liveYears.includes(current)?current:liveYears[liveYears.length-1];
+       const selectedPeriod=periodsIndex().find(p=>p.key===st.per);
+       const keepQ=(selectedPeriod&&selectedPeriod.live&&selectedPeriod.year===liveYear)?selectedPeriod.quarter:null;
+       loadLiveYear(liveYear,keepQ);
        if(keepC==='ALL'||DB.cols[keepC]){st.c=keepC;if(keepC==='ALL'){st.p='ALL'}else{const ps=new Set(DB.cols[keepC].acts.map(a=>a.prog));st.p=(keepP==='ALL'||ps.has(keepP))?keepP:'ALL'}fillFilters();render();}
       statusEl.textContent='● LIVE GOOGLE SHEET';
       statusEl.title='Dashboard data is loaded directly from Google Sheets. Last refresh: '+new Date().toLocaleString();
@@ -735,7 +738,10 @@ render();
     }
   }
   document.getElementById('yr').onchange=e=>loadLiveYear(+e.target.value);
-  document.getElementById('qr').onchange=()=>{};
+  document.getElementById('qr').onchange=e=>{
+    const m=String(e.target.value||'').match(/^live-(\d{4})-(Q[1-4])$/);
+    if(m) loadLiveYear(+m[1],m[2]);
+  };
   await refreshLive();
   // Refresh automatically every 60 seconds while the dashboard is open.
   setInterval(refreshLive,60000);
