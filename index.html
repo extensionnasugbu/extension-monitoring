@@ -361,8 +361,8 @@ function vO(S){
   card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} faculty member${faculty===1?'':'s'} involved`),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
-  card('★',"Trainees’ Rating – Quality & Relevance",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),
-  card('◷',"Trainees’ Rating – Timeliness",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`)
+  card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),
+  card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`)
  ];
  return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
 }
