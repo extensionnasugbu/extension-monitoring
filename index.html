@@ -60,19 +60,21 @@ tr.cb td{background:var(--g);color:#fff;font-weight:700}tr.pg td{background:#EDF
 .up{cursor:pointer;border:1px solid #fff;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;margin:4px 0}.up:hover{background:#DDEBE3;color:#17302A}
 small{color:var(--mut);font-size:9.5px}tr.cb small,.hd small{color:inherit}
 .k5{grid-template-columns:repeat(5,1fr)}@media(max-width:1000px){.k5{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.k5{grid-template-columns:1fr}}.kc{position:relative;cursor:pointer}.kc::after{content:'\24D8';position:absolute;top:6px;right:9px;font-size:12px;line-height:1;color:var(--mut)}.kc .kh{padding-right:16px}
-/* Overview KPI cards open a centered detail dialog instead of a hover tooltip */
-.kc.ov-pop{cursor:pointer;transition:background .15s ease,transform .15s ease,box-shadow .15s ease}
-.kc.ov-pop:hover{background:#e7e7e7!important;transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.08)}
-.kpi-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(8,25,20,.48)}
-.kpi-modal.open{display:flex}
-.kpi-dialog{position:relative;width:min(560px,calc(100vw - 32px));max-height:min(72vh,620px);overflow:auto;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.24);padding:20px 22px}
-.kpi-dialog h2{margin:0 38px 12px 0;font-size:18px;line-height:1.25;color:var(--ink)}
-.kpi-dialog .modal-line{padding:8px 0;border-top:1px solid var(--bd);font-size:12.5px;line-height:1.55}
-.kpi-dialog .modal-line:first-of-type{border-top:0}
-.kpi-dialog .modal-line:first-of-type{font-weight:700}
-.kpi-close{position:absolute;top:10px;right:12px;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--mut);font-size:22px;line-height:30px;cursor:pointer}
-.kpi-close:hover{background:var(--tint);color:var(--ink)}
-body.modal-open{overflow:hidden}
+/* Hover activity drill-down tooltip */
+.kc.has-act-tip{cursor:pointer}
+.act-hover-tip{display:none}
+.act-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.act-tip-item:last-child{border-bottom:0}.act-tip-item div{margin:2px 0}.act-tip-item b{font-weight:700;color:var(--ink)}
+.card-dialog-backdrop{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.38);padding:20px;align-items:center;justify-content:center}
+.card-dialog-backdrop.open{display:flex}
+.card-dialog{width:min(520px,100%);max-height:min(76vh,650px);overflow:hidden;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.card-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;background:var(--g);color:#fff}
+.card-dialog-head b{font:700 15px "Bricolage Grotesque","Public Sans",sans-serif}
+.card-dialog-close{border:0;background:transparent;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 2px}
+.card-dialog-body{padding:14px 16px;max-height:calc(min(76vh,650px) - 50px);overflow:auto;font-size:11.5px;line-height:1.55}
+.card-dialog-summary{white-space:pre-line;margin-bottom:8px}
+.card-dialog-body .act-hover-tip{display:block;position:static;transform:none;width:auto;min-width:0;max-width:none;max-height:none;overflow:visible;padding:0;border:0;border-radius:0;background:transparent;color:inherit;box-shadow:none;font-size:11px;pointer-events:auto}
+body.dialog-open{overflow:hidden}
+
 /* Extension Services Guide branding */
 .hd h1,.viewrow,.p>h3,.kh b,.kv,.bp b,.dn b,.todo-cat>b,.gh,
 h1,h2,h3{font-family:"Bricolage Grotesque","Public Sans",sans-serif}
@@ -95,11 +97,33 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 /* Simple documentary hover details - same clean behavior as scorecards */
 .has-doc-tip{position:relative;cursor:pointer}
 .has-doc-tip:hover{background:#e7e7e7!important;color:#17302A!important}
-.doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#f2f2f2;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
+.doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#fff;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
 .doc-tip b{font-weight:700;color:#17302A}
 .has-doc-tip:hover .doc-tip{display:block}
+
+/* Overview distribution charts: compact, aligned, readable */
+.g4.overview-charts{grid-template-columns:1fr 1fr 1.15fr;align-items:stretch}
+.g4.overview-charts>.p{min-height:300px}
+.dist-clean{width:100%;display:flex;flex-direction:column;gap:10px;align-self:stretch}
+.dist-clean .dr{justify-content:flex-start;align-items:center;flex-wrap:nowrap}
+.dist-clean .lg{flex:1;min-width:0}
+.dist-clean .lg div{white-space:normal;align-items:flex-start;line-height:1.3;margin:6px 0}
+.dist-clean .lg b{margin-left:auto;white-space:nowrap}
+.sdgbar{width:100%;display:flex;flex-direction:column;gap:9px;align-self:stretch}
+.sdgbar-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 62px;gap:10px;align-items:center}
+.sdgbar-label{font-size:10.5px;line-height:1.25;color:var(--tx);font-weight:600}
+.sdgbar-track{height:10px;background:var(--tint);border-radius:999px;overflow:hidden}
+.sdgbar-fill{height:100%;background:var(--leaf);border-radius:999px;min-width:4px}
+.sdgbar-value{text-align:right;font-size:10.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.chart-note{font-size:9.5px;color:var(--mut);margin-top:auto;padding-top:3px}
+.chart-click{cursor:pointer;border-radius:6px;transition:background .15s ease,outline .15s ease}.chart-click:hover{background:#eef3f0}.chart-click.sel{background:#e3eee8;outline:1px solid #a9cbb8}.profile-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}.profile-head b{font-size:12px}.profile-head button{border:1px solid #9fb7ac;background:#fff;border-radius:6px;padding:5px 9px;font-size:10px;cursor:pointer}.profile-head button:disabled{opacity:.55;cursor:default;background:#f4f7f5}.profile-empty{font-size:11px;color:var(--mut);padding:10px 0}.activity-profile{margin-top:10px}.activity-profile table td:first-child{font-weight:700;white-space:nowrap}
+@media(max-width:1000px){.g4.overview-charts{grid-template-columns:1fr 1fr}.g4.overview-charts>.p:last-child{grid-column:1/-1}}
+
+.sdg-rank-panel{margin-top:10px}.sdg-rank{padding:12px 14px;display:flex;flex-direction:column;gap:7px}.sdg-rank-row{display:grid;grid-template-columns:330px minmax(180px,1fr) 90px;gap:12px;align-items:center;border-radius:5px;padding:2px 4px}.sdg-goal{min-height:38px;display:flex;align-items:center;padding:3px 0;color:var(--ink);font-weight:800;font-size:11px;line-height:1.15;background:transparent!important;white-space:nowrap}.sdg-num,.sdg-name{font-size:11px;line-height:1.15;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.15px;white-space:nowrap}.sdg-rank-track{height:28px;background:#eef3f0;border-radius:2px;position:relative;cursor:pointer}.sdg-rank-fill{height:100%;border-radius:2px;background:var(--leaf)!important}.sdg-rank-value{font-size:11px;font-weight:800;color:var(--ink);white-space:nowrap}.sdg-rank-note{padding:0 14px 12px;color:var(--mut);font-size:10px;font-style:italic}.sdg-rank-row:hover{background:#f5f8f6}.sdg-tip{display:none;position:absolute;z-index:50;left:12px;top:calc(100% + 6px);width:min(560px,70vw);max-height:320px;overflow:auto;background:#fff;border:1px solid var(--bd);border-radius:7px;padding:10px 12px;box-shadow:0 8px 22px rgba(17,55,44,.16);font-size:10.5px;line-height:1.35;color:var(--tx)}.sdg-rank-track:hover .sdg-tip,.sdg-rank-track:focus-within .sdg-tip{display:block}.sdg-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.sdg-tip-item:last-child{border-bottom:0}.sdg-tip b{color:var(--ink)}
+@media(max-width:800px){.sdg-rank-row{grid-template-columns:300px minmax(100px,1fr) 72px}.sdg-goal,.sdg-name,.sdg-num{font-size:10px}.sdg-tip{width:min(480px,75vw)}}
+@media(max-width:700px){.g4.overview-charts{grid-template-columns:1fr}.g4.overview-charts>.p:last-child{grid-column:auto}.sdgbar-row{grid-template-columns:minmax(0,1fr) 90px 54px}}
 </style></head><body><div class="wrap">
-<div class="hd"><div><small>BATANGAS STATE UNIVERSITY<br>TNEU ARASOF-Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
+<div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University<br>ARASOF - Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
 <div class="sc"><b style="align-self:center;font-size:13px">▼ Report scope</b><div><label>YEAR</label><select id="yr" class="sm"></select></div><div><label>QUARTER</label><div style="display:flex;gap:4px"><select id="qr" class="sm"></select></div></div><div class="grow"><label>COLLEGE</label><select id="col"></select></div><div class="grow"><label>EXTENSION PROGRAM</label><select id="prog"></select></div></div>
 <div id="view" class="viewrow"></div>
 <div class="nt" id="pernote" style="margin:-4px 0 8px"></div>
@@ -114,7 +138,6 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 <div class="tabs"><button data-t="O"></button><button data-t="A">A · Performance Indicators</button><button data-t="B">B · Activities &amp; Budget</button><button data-t="C">C · Documentary Requirements</button></div>
 <div id="vO" class="v"></div><div id="vA" class="v"></div><div id="vB" class="v"></div><div id="vC" class="v"></div>
 </div>
-<div id="kpiModal" class="kpi-modal" aria-hidden="true"><div class="kpi-dialog" role="dialog" aria-modal="true" aria-labelledby="kpiModalTitle"><button class="kpi-close" type="button" aria-label="Close">×</button><h2 id="kpiModalTitle"></h2><div id="kpiModalBody"></div></div></div>
 <script>
 /*CORE*/
 const S1=x=>x==null?'':String(x).replace(/\s+/g,' ').trim(),nt=x=>S1(x).toLowerCase();
@@ -127,6 +150,9 @@ const num=x=>{
  s=s.replace(/\u00a0/g,' ').trim();
  if(/^\(.*\)$/.test(s))s='-'+s.slice(1,-1);
  s=s.replace(/^[₱$]\s*/,'').replace(/,/g,'').replace(/\s+/g,'');
+ // Live Google Sheets returns percentage cells as formatted strings such as 97% or 91%.
+ // Keep the dashboard's existing 0-100 percentage convention by stripping only the % sign.
+ if(/^-?\d+(?:\.\d+)?%$/.test(s)) return parseFloat(s.slice(0,-1));
  return /^-?\d+(?:\.\d+)?$/.test(s)?parseFloat(s):null;
 };
 const parseDateLike=v=>{
@@ -159,24 +185,41 @@ function normalizeTerminal(acts){const g=new Map();
   const pick=['P','D','S'].map(c=>cells.find(l=>dc(l)===c)).find(Boolean);
   if(pick)list[list.length-1].docs[2]=pick})}
 function parseSheet(rows,sheet){
- const R={ind:[],acts:[],crows:[],name:'',code:'',progFull:{},sign:null};let sec=null,hdr=0,prog=NOP,proj=null;
+ const R={ind:[],acts:[],crows:[],erows:[],name:'',code:'',progFull:{},sign:null};let sec=null,hdr=0,prog=NOP,proj=null;
  rows.forEach((r,ri)=>{const a=r[0],b=r[1],sa=typeof a==='string'?a.trim():a;
   if(typeof sa==='string'){let m;
-   if(/^[ABC]\.\s/.test(sa)){sec=sa[0];hdr=0;return}
+   if(/^[A-E]\.\s*/.test(sa)){sec=sa[0];hdr=0;return}
    if(m=/^(?:College|Department):\s*(.+?)(?:\s*\(([^)]+)\))?(?:\s+-\s+(.+))?$/i.exec(sa)){if(!R.name){R.name=S1(m[1]);R.code=m[2]?S1(m[2]):''}
     if(m[3]){const pm=/\(([^)]+)\)/.exec(m[3]);if(pm)R.progFull[pm[1]]=S1(m[3])}return}
    if(/^Prepared by/i.test(sa)){sec=null;const j=rows.findIndex((x,i)=>i>ri&&typeof x[0]==='string'&&x[0].trim());if(j>0)R.sign=[0,3,5].map(c=>[S1(rows[ri][c]),S1(rows[j][c]),S1(rows[j+1]&&rows[j+1][c])]);return}
-   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))?1:0; return}
+   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))||((sec==='D'||sec==='E')&&/activity title/.test(hb))?1:0; return}
    if(m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*(\d+)\s*(.*)$/i.exec(sa)){prog=S1(m[1]);let rest=m[3].trim();const fm=/\(([^()]*IMPLEMENTATION[^()]*)\)\s*$/i.exec(rest);if(fm)rest=rest.slice(0,fm.index).trim();proj={key:sa,no:+m[2],title:S1(rest),fy:fm?S1(fm[1]):''};return}
    if(/^PROGRAM\s/i.test(sa)){prog=S1(sa.replace(/^PROGRAM\s+/i,''));proj={key:sa,no:null,title:'',fy:''};return}
    if(/^(CONSOLIDATED|Extension Services)/i.test(sa))return}
   if(!hdr||!sec||a==null||typeof b!=='string')return;
-  if(sec==='A')R.ind.push({id:/^PI-/i.test(S1(a))?S1(a):'',n:S1(a),pi:S1(b),src:S1(r[2]),t:num(r[3]),a:num(r[4]),v:num(r[5]),st:S1(r[6]),rem:r[7]==null?'':String(r[7]),u:isPct(S1(b))?'pct':'n'});
+  if(sec==='A'&&S1(b)&&(/^PI-\d+$/i.test(S1(a))||num(a)!=null))R.ind.push({id:/^PI-\d+$/i.test(S1(a))?S1(a):'',n:S1(a),pi:S1(b),src:S1(r[2]),t:num(r[3]),a:num(r[4]),v:num(r[5]),st:S1(r[6]),rem:r[7]==null?'':String(r[7]),u:isPct(S1(b))?'pct':'n'});
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
-  else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))})});
+  else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0)})});
+ /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
+ const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
+ if(eHeader>=0){
+   const clean=[]; let ep=NOP;
+   for(let i=eHeader+1;i<rows.length;i++){
+     const r=rows[i]||[], a=r[0], b=r[1], sa=S1(a);
+     if(/^Prepared by/i.test(sa))break;
+     if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
+     if(num(a)==null||!S1(b))continue;
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0)});
+   }
+   if(clean.length)R.erows=clean;
+ }
  const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
  R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
+ /* Attach Activity Profile values primarily by activity title. Program labels in merged rows are not reliable enough to be the primary key in the live Google Sheet payload. */
+ const allE=R.erows.slice(), epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
+ R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(!e)e=allE.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
 /* Live Google Sheet is authoritative for all documentary requirement cells.
    Do not relocate or normalize Terminal Report values; preserve the exact row/status/date from Section C. */
  if(!R.code)R.code=sheet.replace(/^REF_/i,'').replace(/_/g,' ');return R}
@@ -191,7 +234,23 @@ function buildFromWb(wb){return build(wb.SheetNames,wbRowsFn(wb))}
 function buildFromRowsMap(m){return build(Object.keys(m),n=>m[n])}
 /* ---- 3. FILTERING + 4. CALCULATIONS ---- */
 let DB=null,EMBEDDED_DB=null,st={c:'ALL',p:'ALL',t:'O',per:'__embedded__'};
+function selectedPeriodQuarterValue(){
+ const cur=periodsIndex().find(p=>p.key===st.per);
+ if(!cur||!cur.year||!cur.quarter)return null;
+ const qn=parseInt(String(cur.quarter).replace(/\D/g,''),10);
+ return qn>=1&&qn<=4 ? Number(cur.year)*4+qn-1 : null;
+}
+function activityBelongsToSelectedQuarter(a){
+ const pq=selectedPeriodQuarterValue();
+ if(pq==null)return true;
+ /* Quarterly dashboards are cumulative "as of" reports. Include activities targeted
+    from Q1 up to the selected quarter. For example, Q4 shows Q1 + Q2 + Q3 + Q4,
+    while activities scheduled after the selected quarter remain excluded. */
+ const tq=qv(a&&a.t);
+ return tq==null ? false : tq<=pq;
+}
 function scope(){const codes=Object.keys(DB.cols),cs=st.c==='ALL'?codes:[st.c];let acts=cs.flatMap(c=>DB.cols[c].acts.map(a=>({...a,col:c})));
+ acts=acts.filter(activityBelongsToSelectedQuarter);
  const level=st.c==='ALL'?'ALL':st.p==='ALL'?'COL':'PROG';if(level==='PROG')acts=acts.filter(a=>a.prog===st.p);
  return{level,cs,acts,ind:level==='ALL'?(DB.cons?DB.cons.ind:[]):DB.cols[st.c].ind}}
 const sm=(x,k)=>x.reduce((s,a)=>s+a[k],0),ratio=(a,b)=>b?a/b*100:null;
@@ -206,7 +265,7 @@ function M(A){const stat={};A.forEach(a=>stat[a.s]=(stat[a.s]||0)+1);
 /*ENDCORE*/
 /* ---- 5. UI HELPERS ---- */
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const pf=x=>x==null?'N/A':+x.toFixed(2)+'%',peso=n=>n==null?'N/A':'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),nv=x=>x==null?'N/A':x;
+const pf=x=>x==null?'N/A':Math.round(x)+'%',peso=n=>n==null?'N/A':'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),nv=x=>x==null?'N/A':x;
 const TARGETS={budget:70,schedule:90,submission:95};
 const vsTarget=(val,tgt)=>val==null?'':val>=tgt?`This meets or exceeds the ${tgt}% target.`:`This is below the ${tgt}% target.`;
 const ADVICE={
@@ -224,12 +283,9 @@ const actTip=m=>{const oth=Object.entries(m.stat).filter(([k])=>k!=='Implemented
 const projTip=m=>mktip(`Projects Completed: ${m.pjc} of ${m.pjn}.`,'A project counts as completed only when every one of its activities is Implemented.',m.pjn-m.pjc>0?`${m.pjn-m.pjc} project(s) still have at least one pending activity - finish these to close them out.`:'All projects are fully implemented.');
 const fyLabel=()=>'FY '+((periodsIndex().find(p=>p.key===st.per)||{}).year||EMB_Y);
 const stripTags=s=>String(s==null?'':s).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
-let overviewPopupMode=false;
 const card=(ic,l,v,p,s1,customTip='')=>{
- const rawTip=customTip||[`${stripTags(l)}: ${stripTags(v)}.`,stripTags(s1)].filter(Boolean).join('\n');
- const tip=esc(rawTip), title=esc(stripTags(l));
- const pop=overviewPopupMode?` ov-pop" tabindex="0" role="button" aria-label="Open ${title} details" data-modal-title="${title}" data-modal-body="${tip}"`:`" title="${tip}"`;
- return `<div class="kc${pop}><div class="kh"><span class="ic">${ic}</span><b>${l}</b></div><div class="kv">${v}</div>${p==null?'':`<div class="pb"><i style="width:${Math.min(p,100)}%"></i></div>`}<div class="ks">${s1}</div></div>`};
+ const tip=esc(customTip||[`${stripTags(l)}: ${stripTags(v)}.`,stripTags(s1)].filter(Boolean).join('\n'));
+ return `<div class="kc" title="${tip}"><div class="kh"><span class="ic">${ic}</span><b>${l}</b></div><div class="kv">${v}</div>${p==null?'':`<div class="pb"><i style="width:${Math.min(p,100)}%"></i></div>`}<div class="ks">${s1}</div></div>`};
 const P=(t,r,b,cl='')=>`<div class="p ${cl}"><h3><span>${t}</span><em>${r||''}</em></h3><div class="b">${b}</div></div>`;
 const L=(t,a)=>P(t,'',`<ul>${a.map(i=>`<li>${i}</li>`).join('')}</ul>`);
 const badge=s=>{const c=s==='MET'||s==='Implemented'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na';return`<span class="bd ${c}">${c==='ok'?'✔ ':c==='am'?'◷ ':''}${esc(s)}</span>`};
@@ -240,17 +296,29 @@ const dn=(segs,c,l)=>{let a=0;const tot=segs.reduce((s,x)=>s+x[1],0),g=tot?segs.
 const projL=j=>j.no!=null?`PROJECT ${j.no}${j.title?' - '+esc(j.title):''}`:'';
 const progL=(c,p)=>p===NOP?p:esc(DB.cols[c].progFull[p]||p);
 const short=a=>`${a.col} · ${a.prog===NOP?'':a.prog+' · '}${a.proj.no!=null?'P'+a.proj.no+' ':''}Act. ${a.n}`;
-const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x*100):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v*100):+i.v.toFixed(2);
+const fullProg=a=>a.prog===NOP?'—':(DB.cols[a.col]&&DB.cols[a.col].progFull[a.prog]||a.prog);
+const programTipHtml=A=>{const ps=[...new Set((A||[]).map(a=>fullProg(a)).filter(x=>x&&x!=='—'))];return ps.length?`<div class="act-hover-tip">${ps.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
+const projectTipHtml=A=>{const seen=new Set(),rows=[];(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!seen.has(k)){seen.add(k);rows.push([pr,pj])}});return rows.length?`<div class="act-hover-tip">${rows.map(([pr,pj])=>`<div class="act-tip-item"><div><b>Program</b> ${esc(pr)}</div><div><b>Project</b> ${esc(pj)}</div></div>`).join('')}</div>`:''};
+const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip">${A.map(a=>`<div class="act-tip-item"><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div>`};
+const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';let t=String(row.rem||'').replace(/One\s*\(1\).*?(?:target|established)[^\n]*/ig,'').trim();let vals=t.split(/\n|;|\|/).map(x=>x.replace(/^\s*\d+[.)-]?\s*/, '').trim()).filter(Boolean);if(!vals.length&&row.rem)vals=[String(row.rem).trim()];return vals.length?`<div class="act-hover-tip">${vals.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
+const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
+const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
+const withActivityTip=(html,A)=>withHoverTip(html,activityTipHtml(A));
+const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v):+i.v.toFixed(2);
 const idl=i=>i.id||'#'+i.n,rol=(I,re)=>I.find(i=>re.test(i.pi));
 const remL=t=>String(t||'').split('\n').map(esc).join('<br>');
-function TvA(I){const bar=i=>{const r=i.t&&i.a!=null?i.a/i.t:null;return`<div class="tr"><div class="tl"><span><b>${esc(idl(i))}</b> ${esc(i.pi)}</span><b>${r==null?'N/A':(r>1?'▲ ':'')+(i.u==='pct'?`${pf(i.a*100)} / ${pf(i.t*100)}`:`${i.a} / ${i.t}`)}</b></div><div class="pb">${r==null?'':`<i class="${r>=1?'g':'a'}" style="width:${Math.min(r*100,100)}%"></i>`}</div></div>`},
- g=(l,x)=>{const r=I.filter(i=>i.u===x);return r.length?`<div class="gh">${l}</div>`+r.map(bar).join(''):''};
- return g('Counts','n')+g('Percentages (%)','pct')+'<div class="nt">Accomplishment ÷ target, capped at 100%; ▲ = above target; N/A = accomplishment not reported.</div>'}
+function TvA(I){
+ const valid=I.filter(i=>/^PI-\d+$/i.test(S1(i.id))&&S1(i.pi));
+ const bar=i=>{const r=i.t&&i.a!=null?i.a/i.t:null;return`<div class="tr"><div class="tl"><span><b>${esc(idl(i))}</b> ${esc(i.pi)}</span><b>${r==null?'N/A':(r>1?'▲ ':'')+(i.u==='pct'?`${pf(i.a)} / ${pf(i.t)}`:`${i.a} / ${i.t}`)}</b></div><div class="pb">${r==null?'':`<i class="${r>=1?'g':'a'}" style="width:${Math.min(r*100,100)}%"></i>`}</div></div>`};
+ return valid.sort((a,b)=>(parseInt(a.id.replace(/\D/g,''))||0)-(parseInt(b.id.replace(/\D/g,''))||0)).map(bar).join('')+'<div class="nt">Accomplishment ÷ target, capped at 100%; ▲ = above target; N/A = accomplishment not reported.</div>'
+}
 function tbl(S,n,head,rowFn,prog=true){let h='',lc,lp,lj;S.acts.forEach(a=>{if(S.level==='ALL'&&a.col!==lc){lc=a.col;lp=lj=null;h+=`<tr class="cb"><td colspan="${n}">${esc(lc)} - ${esc(DB.cols[lc].name)}</td></tr>`}
  const pk=a.col+'|'+a.prog,jk=pk+'|'+a.proj.key;if(pk!==lp){lp=pk;lj=null;if(a.prog!==NOP)h+=`<tr class="pg"><td colspan="${n}">PROGRAM ${esc(a.prog)}${DB.cols[a.col].progFull[a.prog]?' - '+esc(DB.cols[a.col].progFull[a.prog]):''}</td></tr>`}
  if(jk!==lj){lj=jk;if(a.proj.no!=null)h+=`<tr class="ph"><td colspan="${n}">${projL(a.proj)}<span>${esc(a.proj.fy)}</span></td></tr>`}h+=rowFn(a)});
  return`<div class="tw"><table><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${h}</table></div>`}
 const cellB=(v,note)=>v!=null?peso(v):`<span class="bd na" title="${esc(note||'Not applicable')}">${note&&!/^No\b/i.test(note)&&note.length>1&&note.length<20?esc(note):'N/A'}</span>`;
+const partnerFunded=a=>a.alloc===0&&a.util===0;
+const partnerBudgetNote='No University budget was allocated; activity expenses were shouldered by the partner.';
 function actRanges(ns){const s=[...new Set(ns)].sort((x,y)=>x-y);if(!s.length)return'';const out=[];let a=s[0],b=s[0];
  for(let i=1;i<=s.length;i++){if(s[i]===b+1){b=s[i];continue}out.push(a===b?`Activity ${a}`:`Activities ${a}-${b}`);a=b=s[i]}
  return out.join(', ')}
@@ -261,58 +329,58 @@ function groupNote(acts){const g={};acts.forEach(a=>{const k=a.col+'\u0001'+a.pr
  return Object.values(g).map(list=>{const a0=list[0],ck=a0.col+'\u0001'+a0.prog+'\u0001'+a0.proj.no,amb=noCounts[ck]>1,fy=amb&&a0.proj.fy?' ('+shortFY(a0.proj.fy)+')':'';
   const pre=[multiCol?a0.col:null,a0.prog!==NOP?a0.prog:null,a0.proj.no!=null?'P'+a0.proj.no+fy:null].filter(Boolean).join(' ');
   return(pre?pre+' ':'')+actRanges(list.map(a=>a.n))}).join('; ')}
-function bpanel(m){const notes={};m.A.forEach(a=>{if(a.note)(notes[a.note]=notes[a.note]||[]).push(a)});const nl=Object.entries(notes).sort((x,y)=>y[1].length-x[1].length).slice(0,3);
- return`<div class="bp"><div><span>Allocated</span><b>${peso(m.al?m.tb:null)}</b></div><div><span>Utilized</span><b>${peso(m.tu||m.bb?m.tu:null)}</b></div><div><span>Utilization rate</span><b>${pf(m.rate)}</b></div></div>${m.rate==null?'':`<div class="pb"><i style="width:${Math.min(m.rate,100)}%"></i></div><div class="nt">Rate = ${peso(m.bt)} / ${peso(m.bb)} (activities with allocation and reported utilization).</div>`}<div class="nt">${m.noAl} of ${m.n} activities have no numeric allocation (N/A) - not counted as ₱0.${m.noUtil.length?` ${m.noUtil.length} allocated activities have no reported utilization.`:''}</div>${nl.map(([t,list])=>`<div class="nt">"${esc(t)}" - ${esc(groupNote(list))}</div>`).join('')}`}
+function bpanel(m){const notes={};m.A.forEach(a=>{if(a.note)(notes[a.note]=notes[a.note]||[]).push(a)});const nl=Object.entries(notes).sort((x,y)=>y[1].length-x[1].length).slice(0,3),pfA=m.A.filter(partnerFunded);
+ return`<div class="bp"><div><span>Allocated</span><b>${peso(m.al?m.tb:null)}</b></div><div><span>Utilized</span><b>${peso(m.tu||m.bb?m.tu:null)}</b></div><div><span>Utilization rate</span><b>${pf(m.rate)}</b></div></div>${m.rate==null?'':`<div class="pb"><i style="width:${Math.min(m.rate,100)}%"></i></div><div class="nt">Rate = ${peso(m.bt)} / ${peso(m.bb)} (activities with allocation and reported utilization).</div>`}<div class="nt">${m.noAl} of ${m.n} activities have no numeric allocation (N/A) - not counted as ₱0.${m.noUtil.length?` ${m.noUtil.length} allocated activities have no reported utilization.`:''}</div>${pfA.length?`<div class="nt"><b>N/A:</b> ${esc(partnerBudgetNote)} (${esc(groupNote(pfA))})</div>`:''}${nl.map(([t,list])=>`<div class="nt">"${esc(t)}" - ${esc(groupNote(list))}</div>`).join('')}`}
+
+/* ---- EXECUTIVE OVERVIEW HELPERS ---- */
+const rowText=a=>[a.title,a.note,a.unote].filter(Boolean).join(' | ');
+const uniqText=(A,re)=>{const out=new Set();A.forEach(a=>{const txt=rowText(a);let m;const rx=new RegExp(re.source,re.flags.includes('g')?re.flags:re.flags+'g');while((m=rx.exec(txt))){const v=S1(m[1]||m[0]).replace(/^[\s:=-]+|[\s;,.]+$/g,'');if(v)out.add(v);if(!rx.global)break}});return [...out]};
+const indFind=(I,...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
+const indActual=(I,...res)=>{const i=indFind(I,...res);return i&&i.a!=null?i.a:null};
+const countCompletedPrograms=A=>{const g=new Map();A.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!g.has(k))g.set(k,[]);g.get(k).push(a)});return [...g.values()].filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length};
+const countPrograms=A=>new Set(A.filter(a=>a.prog!==NOP).map(a=>a.col+'|'+a.prog)).size;
+const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig],service:[/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig],sdg:[/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig]};return uniqText(A,patterns[kind][0])};
+function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
+function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
+function profileTotals(A){let faculty=0,students=0,q=[0,0,0,0,0],t=[0,0,0,0,0],hasF=false,hasS=false,hasQ=false,hasT=false;A.forEach(a=>{const p=a.profile;if(!p)return;if(p.faculty!=null){faculty+=p.faculty;hasF=true}if(p.students!=null){students+=p.students;hasS=true}p.quality.forEach((v,i)=>{q[i]+=v;if(v)hasQ=true});p.timeliness.forEach((v,i)=>{t[i]+=v;if(v)hasT=true})});const sat=x=>{const den=x.reduce((a,b)=>a+b,0),num=x[2]+x[3]+x[4];return den?{den,num,rate:num/den*100}:null};return{faculty:hasF?faculty:null,students:hasS?students:null,q:hasQ?sat(q):null,t:hasT?sat(t):null}}
+function distPanel(title,items,kind,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);let a=0;const g=segs.map(([,v,col])=>{const z=a;a+=v/total*100;return`${col} ${z}% ${a}%`}).join(',');const legend=segs.map(([n,v,col])=>`<div class="chart-click" data-okind="${kind}" data-oval="${esc(n)}" title="Click to show matching activities"><i style="background:${col}"></i>${esc(n)}<b>${v} (${pf(ratio(v,total)||0)})</b></div>`).join('');return P(title,'',`<div class="dist-clean"><div class="dr"><div class="dn" style="background:conic-gradient(${g})"><div><b>${total}</b><small>${unit}</small></div></div><div class="lg">${legend}</div></div></div>`,'chart')}
+function sdgPanel(items){if(!items.length)return P('Activities Contributing to the SDGs','','<div class="nt">No SDG contribution data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),mx=Math.max(...items.map(x=>x[1]),1);const rows=items.map(([n,v])=>`<div class="sdgbar-row chart-click" data-okind="sdg" data-oval="${esc(n)}" title="Click to show activities contributing to this SDG"><div class="sdgbar-label">${esc(n)}</div><div class="sdgbar-track"><div class="sdgbar-fill" style="width:${v/mx*100}%"></div></div><div class="sdgbar-value">${v} · ${pf(ratio(v,total)||0)}</div></div>`).join('');return P('Activities Contributing to the SDGs','',`<div class="sdgbar">${rows}</div>`,'chart')}
+const SDG_META={1:['No Poverty','#E5243B'],2:['Zero Hunger','#DDA63A'],3:['Good Health and Well-Being','#4C9F38'],4:['Quality Education','#C5192D'],5:['Gender Equality','#FF3A21'],6:['Clean Water and Sanitation','#26BDE2'],7:['Affordable and Clean Energy','#FCC30B'],8:['Decent Work and Economic Growth','#A21942'],9:['Industry, Innovation and Infrastructure','#FD6925'],10:['Reduced Inequalities','#DD1367'],11:['Sustainable Cities and Communities','#FD9D24'],12:['Responsible Consumption and Production','#BF8B2E'],13:['Climate Action','#3F7E44'],14:['Life Below Water','#0A97D9'],15:['Life on Land','#56C02B'],16:['Peace, Justice and Strong Institutions','#00689D'],17:['Partnerships for the Goals','#19486A']};
+function sdgNumber(v){const m=S1(v).match(/SDG\s*(\d{1,2})/i);return m?+m[1]:null}
+function activitiesBySDGPanel(items,totalActivities,A=[]){const counts={};items.forEach(([label,count])=>{const n=sdgNumber(label);if(n>=1&&n<=17)counts[n]=(counts[n]||0)+Number(count||0)});const normalized=Array.from({length:17},(_,i)=>{const n=i+1,meta=SDG_META[n];return{n,name:meta[0],count:counts[n]||0}});const scopeTotal=Math.max(Number(totalActivities)||0,1);const tipFor=n=>{const matches=A.filter(a=>a.profile&&splitSDGs(a.profile.sdg).some(v=>sdgNumber(v)===n));if(!matches.length)return '<div class="sdg-tip">No activities under this SDG in the current scope.</div>';return `<div class="sdg-tip"><b>${matches.length} activit${matches.length===1?'y':'ies'} under SDG ${n}</b>${matches.map(a=>`<div class="sdg-tip-item"><div><b>Program:</b> ${esc(a.prog||'—')}</div><div><b>Project:</b> ${esc(a.proj&&a.proj.title?('Project '+(a.proj.no||'')+' - '+a.proj.title):'—')}</div><div><b>Activity:</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div>`};const rows=normalized.map(x=>`<div class="sdg-rank-row"><div class="sdg-goal"><span class="sdg-num">SDG ${x.n} - ${esc(x.name)}</span></div><div class="sdg-rank-track" tabindex="0" aria-label="SDG ${x.n}, ${x.count} activities. Hover or focus to view activity details."><div class="sdg-rank-fill" style="width:${x.count?Math.min(x.count/scopeTotal*100,100):0}%"></div>${tipFor(x.n)}</div><div class="sdg-rank-value">${x.count} Activit${x.count===1?'y':'ies'}</div></div>`).join('');return P('Activities by Sustainable Development Goal','',`<div class="sdg-rank">${rows}</div><div class="sdg-rank-note">SDG Dashboard displaying all 17 Sustainable Development Goals and the classification of extension activities based on their contribution to each goal. Hover over a bar to view the program, project, and activity details.</div>`,'sdg-rank-panel')}
+function activityMatches(a,kind,val){if(!a||!a.profile)return false;if(kind==='agenda')return S1(a.profile.agenda)===val;if(kind==='service')return S1(a.profile.service)===val;if(kind==='sdg')return splitSDGs(a.profile.sdg).includes(val);return true}
+function activityProfile(A,kind='',val=''){const rows=A.filter(a=>!kind||activityMatches(a,kind,val));const body=rows.map(a=>{const p=a.profile||{};const sdgs=splitSDGs(p.sdg||'').join(', ');return `<tr><td>${esc('Activity '+a.n)}</td><td>${esc(a.title)}</td><td>${esc(p.agenda||'—')}</td><td>${esc(p.service||'—')}</td><td>${esc(sdgs||'—')}</td></tr>`}).join('');const label=kind?`Showing ${rows.length} of ${A.length} activities · Filtered by: ${esc(val)}`:`Showing all ${A.length} activities in the current scope`;return P('Extension Activity Profile','',`<div class="profile-head"><b id="profileFilterLabel">${label}</b><button type="button" id="clearOverviewFilter" ${kind?'':'disabled'}>${kind?'Clear Filter / Show All Activities':'Showing All Activities'}</button></div>${rows.length?`<div class="tw"><table><tr><th>Act. No.</th><th>Activity Title</th><th>Extension Agenda</th><th>Community Service Modality</th><th>SDG</th></tr><tbody id="activityProfileRows">${body}</tbody></table></div>`:`<div class="profile-empty">No activities match this selection.</div>`}`,'activity-profile')}
+function satisfactionFromIndicators(I,kind){const re=kind==='quality'?/(quality\s*(?:and|&)\s*relevance|quality|relevance)/i:/timeliness/i;const rows=I.filter(i=>re.test(i.pi));const vals={P:0,F:0,S:0,VS:0,E:0};let found=false;rows.forEach(i=>{const text=(i.pi+' '+i.rem);for(const k of Object.keys(vals)){const m=new RegExp('(?:^|\\b)'+k+'\\s*[:=-]\\s*(\\d+(?:\\.\\d+)?)','i').exec(text);if(m){vals[k]+=+m[1];found=true}}});if(!found)return null;const den=Object.values(vals).reduce((a,b)=>a+b,0),num=vals.S+vals.VS+vals.E;return{...vals,den,num,rate:den?num/den*100:null}}
+
 /* ---- OVERVIEW (All Colleges / College / Program) ---- */
-function vO(S){overviewPopupMode=true;const m=M(S.acts),I=S.ind,lv=S.level,K=[],met=I.filter(i=>i.st==='MET').length,p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i);
- if(lv!=='PROG'&&I.length){K.push(card('◎','Performance Indicators Met',`${met} / ${I.length}`,ratio(met,I.length),`${pf(ratio(met,I.length))} fully MET`,mktip(`Performance Indicators Met: ${met} of ${I.length} (${pf(ratio(met,I.length))}).`,I.filter(i=>i.st!=='MET').length?`Not yet MET: ${I.filter(i=>i.st!=='MET').map(idl).join(', ')}.`:'Every indicator is MET.',advice(ratio(met,I.length),100,'indicators'))));
-  if(p2)K.push(card('⚙','Approved Extension Programs',`${nv(p2.a)} / ${nv(p2.t)}`,p2.a==null?null:ratio(p2.a,p2.t),'conducted vs. target',mktip(`Approved Extension Programs: ${nv(p2.a)} of ${nv(p2.t)} conducted (${esc(p2.st)}).`,p2.a==null?'The accomplishment is not reported in the workbook.':gapTip(p2.a,p2.t,' program(s)'),'A program only counts once its approved activities are implemented, so completing the remaining activities is what moves this figure.')));
-  if(p3)K.push(card('●','Beneficiary Achievement',p3.a==null?'N/A':pf(ratio(p3.a,p3.t)),p3.a==null?null:ratio(p3.a,p3.t),`${nv(p3.a)} of ${nv(p3.t)} weighted target`,mktip(`Beneficiary Achievement: ${p3.a==null?'N/A':pf(ratio(p3.a,p3.t))}.`,p3.a==null?'No accomplishment is reported in the workbook, so the rate cannot be computed.':`${p3.a} of ${p3.t} weighted beneficiaries (weighted by training length) have been served.`,p3.a==null?'Encode the accomplishment so reach can be tracked against the target.':(p3.a>=p3.t?'Beneficiary reach target is met - sustain outreach quality.':`${p3.t-p3.a} more weighted beneficiaries are needed - prioritize the remaining scheduled trainings.`))));
-  if(p4)K.push(card('★','Beneficiary Satisfaction',pv(p4,p4.a),p4.a==null?null:ratio(p4.a,p4.t),`Target ${pv(p4,p4.t)} | Actual ${pv(p4,p4.a)}`,mktip(`Beneficiary Satisfaction: ${pv(p4,p4.a)} (target ${pv(p4,p4.t)}).`,p4.a==null?'No accomplishment is reported.':(p4.a>=p4.t?'Trainees rate the trainings at or above the target for quality and relevance.':'Trainee ratings are below the target.'),p4.a==null?'':(p4.a>=p4.t?'Keep the current training design and facilitators.':'Review trainee feedback and adjust content or facilitation before the next batch.'))));const p5=rol(I,/notarized Memorandum/i);if(p5)K.push(card('✎','Notarized MOU / MOA',`${nv(p5.a)} / ${nv(p5.t)}`,p5.a==null?null:ratio(p5.a,p5.t),'notarized MOU/MOA vs. target',mktip(`Notarized MOU / MOA: ${nv(p5.a)} of ${nv(p5.t)} (${esc(p5.st)}).`,p5.a==null?'The accomplishment is not reported.':gapTip(p5.a,p5.t,' agreement(s)'),'Notarized agreements are the formal basis for partner-supported activities - follow up pending signings early.')))}
- const actCard=card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.fi} for implementation`,actTip(m));
- const schedVal=ratio(m.ot,m.cmp),schedCard=card('▦','Schedule Adherence',pf(schedVal),schedVal,`${m.ot} of ${m.cmp} due-or-implemented activities hit their exact target quarter`,
-  mktip(`Schedule Adherence: ${pf(schedVal)}.`,`${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly.`,vsTarget(schedVal,TARGETS.schedule),advice(schedVal,TARGETS.schedule,'schedule')));
- const projCard=card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),'all activities implemented',projTip(m));
- const budCard=card('₱','Budget Utilization Rate',pf(m.rate),m.rate,`${peso(m.bt)} of ${peso(m.bb)}`,
-  mktip(`Budget Utilization Rate: ${pf(m.rate)} (${peso(m.bt)} of ${peso(m.bb)}).`,vsTarget(m.rate,TARGETS.budget),advice(m.rate,TARGETS.budget,'budget')));
- const docVal=m.due?ratio(m.s,m.due):null,docCard=card('◔','On-Time Submission Rate',m.due?pf(docVal):'N/A',docVal,`${m.s} of ${m.due} currently due submitted`,
-  mktip(`On-Time Submission Rate: ${m.due?pf(docVal):'N/A'}.`,`${m.s} of ${m.due} currently due requirements submitted.`,vsTarget(docVal,TARGETS.submission),advice(docVal,TARGETS.submission,'submission')));
- K.push(...(lv==='PROG'?[projCard,actCard,schedCard,docCard,budCard]:[actCard,schedCard,projCard,budCard,docCard]));
- const key=lv==='ALL'?a=>a.col:lv==='COL'?a=>a.prog:a=>a.proj.key||a.prog,G=new Map();S.acts.forEach(a=>{const k=key(a);G.has(k)||G.set(k,[]);G.get(k).push(a)});
- const U=[...G].map(([k,A])=>({k,A,m:M(A),lab:lv==='ALL'?k:lv==='COL'?(k===NOP?k:k):(A[0].proj.no!=null?'P'+A[0].proj.no:k),
-  full:lv==='ALL'?DB.cols[k].name:lv==='COL'?(DB.cols[st.c].progFull[k]||''):(A[0].proj.title||''),
-  sub:lv==='ALL'?new Set(A.map(a=>a.prog)).size:lv==='COL'?new Set(A.map(a=>a.proj.key)).size:'-'}));
- const bene=c=>{const I2=DB.cols[c].ind,i=rol(I2,/external beneficiaries/i);return i&&i.a!=null?`${i.a}/${i.t} <small>(${pf(ratio(i.a,i.t))})</small>`:'N/A'};
- const pim=c=>{const I2=DB.cols[c].ind;return I2.length?`${I2.filter(i=>i.st==='MET').length}/${I2.length}`:'N/A'};
- const showPI=lv==='ALL',rows=U.map(u=>`<tr><td class="nw"><b>${esc(u.lab)}</b> ${esc(u.full)}</td><td class="c">${u.sub}</td><td class="c">${u.m.n}</td><td class="c">${u.m.im}</td><td class="c">${u.m.fi}</td><td class="c">${u.m.n-u.m.im-u.m.fi}</td>${showPI?`<td class="c">${bene(u.k)}</td><td class="c">${pim(u.k)}</td>`:''}<td class="c">${pf(u.m.rate)}${u.m.bb?`<br><small>${peso(u.m.bt)} / ${peso(u.m.bb)}</small>`:''}</td><td class="c">${u.m.due?pf(ratio(u.m.s,u.m.due)):'N/A'}<br><small>${u.m.s} sub · ${u.m.d} NYD · ${u.m.p} pend</small></td></tr>`).join('');
- const uh=lv==='ALL'?['College','Programs']:lv==='COL'?['Extension Program','Projects']:['Project',''];
- const head=[...uh,'Activities','Implemented','For Impl.','Other status',...(showPI?['Beneficiary (actual/target)','Indicators MET']:[]),'Budget Utilization','On-Time Submission'];
- const rt=[['Implemented',u=>ratio(u.m.im,u.m.n)],['Budget utilization',u=>u.m.rate],['Docs submitted ÷ applicable',u=>u.m.ap?ratio(u.m.s,u.m.ap):null]],cc=['#2F8F5B','#E3A72F','#DDEBE3'];
- const chart=`<div style="display:flex;gap:12px;font-size:10px;margin-bottom:4px">${rt.map((r,i)=>`<span><i class="sw" style="background:${cc[i]}"></i>${r[0]}</span>`).join('')}</div><div class="bc">${U.map(u=>`<div><div class="bars">${rt.map((r,i)=>{const v=r[1](u);return`<i style="height:${v==null?0:Math.min(v,100)}%;background:${cc[i]}" title="${esc(u.lab)} - ${esc(r[0])}: ${v==null?'N/A':pf(v)}"><b>${v==null?'N/A':Math.round(v)+'%'}</b></i>`}).join('')}</div><span class="lbl">${esc(u.lab)}</span></div>`).join('')}</div>`;
- const stt=Object.entries(m.stat).map(([k,v],i)=>[k,v,SC[k]||PAL[(i+2)%6]]);
- const ul=lv==='ALL'?'college':lv==='COL'?'program':'project',lab=u=>u.lab,list=f=>U.filter(f).map(u=>`${esc(lab(u))} (${f.v(u)})`).join(', ');
- const nonmet=I.filter(i=>i.st!=='MET');
- const ins=[`${m.im} of ${m.n} activities implemented (${pf(ratio(m.im,m.n))}); ${m.fi} for implementation${m.n-m.im-m.fi?`; ${m.n-m.im-m.fi} other status (${Object.entries(m.stat).filter(([k])=>k!=='Implemented'&&k!=='For Implementation').map(([k,v])=>v+' '+esc(k)).join(', ')})`:''}.`,
-  m.pjn?`${m.pjc} of ${m.pjn} projects completed (all activities implemented).`:null,
-  I.length&&lv!=='PROG'?`${met} of ${I.length} performance indicators MET${nonmet.length?`; not yet MET: ${nonmet.map(i=>`${esc(idl(i))} (${pv(i,i.a)} of ${pv(i,i.t)})`).join(', ')}`:''}. ${advice(ratio(met,I.length),100,'indicators')}`:null,
-  m.rate!=null?`Budget utilization ${pf(m.rate)}: ${peso(m.bt)} utilized of ${peso(m.bb)} allocated (activities with reported utilization). ${vsTarget(m.rate,TARGETS.budget)} ${advice(m.rate,TARGETS.budget,'budget')}`:'No utilization rate can be computed from numeric budget records.',
-  m.cmp?`Schedule adherence ${pf(schedVal)}: ${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly. ${vsTarget(schedVal,TARGETS.schedule)} ${advice(schedVal,TARGETS.schedule,'schedule')}`:null,
-  m.due?`On-time submission rate ${pf(docVal)}: ${m.s} of ${m.due} currently due requirements submitted. ${vsTarget(docVal,TARGETS.submission)} ${advice(docVal,TARGETS.submission,'submission')}`:null,
-  `${m.noAl} of ${m.n} activities have no numeric allocation (N/A), not treated as ₱0.`,
-  `Documents: ${m.s} of ${m.ap} applicable requirements submitted; ${m.d} not yet due; ${m.p} pending/overdue; ${m.na} N/A excluded.`].filter(Boolean);
- const pu=U.filter(u=>u.m.p),bu=U.filter(u=>u.m.fi);
- const nxt=[m.fi?`Implement the ${m.fi} remaining activities${bu.length>1?': '+bu.map(u=>`${esc(u.lab)} (${u.m.fi})`).join(', '):''}.`:null,
-  m.behind.length?`${m.behind.length} for-implementation activities are past their target quarter - confirm schedules${m.behind.length<4?': '+m.behind.map(a=>esc(short(a))).join('; '):''}.`:null,
-  m.p?`Clear ${m.p} pending/overdue documentary requirements${pu.length>1||lv==='ALL'?' - '+pu.map(u=>`${esc(u.lab)} (${u.m.p})`).join(', '):''}.`:null,
-  m.d?`Track ${m.d} not-yet-due documents as activities are completed.`:null,
-  m.noUtil.length?`Record utilization for ${m.noUtil.length} allocated activities without a reported amount.`:null,
-  nonmet.length&&lv!=='PROG'?`Address indicator gaps: ${nonmet.map(i=>esc(idl(i))).join(', ')}.`:null].filter(Boolean);
- const perfByTitle='Performance by '+ul[0].toUpperCase()+ul.slice(1),perfByPanel=P(perfByTitle,'rates in %',chart);
- overviewPopupMode=false;
- const tablePanel=P(lv==='ALL'?'College Performance Overview':lv==='COL'?'Program Overview':'Project Overview','as of Q'+((asOf%4)+1)+' '+Math.floor(asOf/4),`<div class="tw"><table class="ovt">${'<tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>'+rows}</table></div>`,'np');
- return`<div class="k k5">${K.join('')}</div>${lv==='PROG'?`<div style="margin-bottom:8px">${tablePanel}</div>`:''}
- <div class="g4">${P('Implementation Status Distribution','',dn(stt,m.n,'Activities'),'chart')}${lv!=='PROG'?perfByPanel:P('Budget Performance','',bpanel(m))}${P('Documentary Compliance','',dn([['Submitted',m.s,'#2F8F5B'],['Not Yet Due',m.d,'#DDEBE3'],['Pending / Overdue',m.p,'#B4472F']],m.ap,'Documents'),'chart')}</div>
- ${lv!=='PROG'?`<div style="margin-bottom:8px">${P('Budget Performance','',bpanel(m))}</div>`:''}<div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+function vO(S){
+ const m=M(S.acts),I=S.ind,A=S.acts;
+ const progTotal=countPrograms(A),progDone=countCompletedPrograms(A);
+ const partnerships=indActual(I,/partnership/i,/MOU/i,/MOA/i);
+ const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
+ const pt=profileTotals(A);
+ const faculty=pt.faculty!=null?pt.faculty:indActual(I,/faculty/i);
+ const students=pt.students!=null?pt.students:indActual(I,/student/i);
+ const bene=indActual(I,/external beneficiaries/i,/beneficiar/i);
+ const q=pt.q||satisfactionFromIndicators(I,'quality'),t=pt.t||satisfactionFromIndicators(I,'timeliness');
+ const qInd=indFind(I,/quality.*relevance/i,/percentage of trainees/i),tInd=indFind(I,/timeliness/i);
+ const qRate=q?q.rate:(qInd&&qInd.a!=null?qInd.a:null),tRate=t?t.rate:(tInd&&tInd.a!=null?tInd.a:null);
+ const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
+ const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
+ const K=[
+  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
+  withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
+  withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A.filter(a=>a.s==='Implemented'))),
+  withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':partnerships,null,partnerships==null?'No reported data':`${partnerships} partnership${partnerships===1?'':'s'} established`),partnerTipHtml(I)),
+  withHoverTip(card('◎','SDGs Addressed',sdgCount||'N/A',null,sdgCount?`${sdgCount} Sustainable Development Goal${sdgCount===1?'':'s'} addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
+  card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} faculty member${faculty===1?'':'s'} involved`),
+  card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
+  card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
+  card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),
+  card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`)
+ ];
+ return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
+}
 /* ---- SECTION A ---- */
 function vA(S){const I=S.ind,lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
@@ -328,19 +396,19 @@ function vA(S){const I=S.ind,lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filt
  return`${lv==='PROG'?'<div class="nt" style="margin:0 0 6px">Performance indicators are reported at college level in the workbook; the selected program does not have its own indicator set.</div>':''}<div class="k">${K}</div><div class="g2">${P('Performance Indicator Details',lv==='ALL'?'all colleges':fyLabel(),`<div class="tw pidbox"><table><tr><th>ID</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th><th>${lv==='ALL'?'Target per Office':'Remarks'}</th></tr>${rows}</table></div>`,'np')}${P('Target vs. Accomplishment','',TvA(I),'tva')}</div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
 /* ---- SECTION B ---- */
 function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cmp-m.ot,
- K=card('◎','Total Extension Activities',n,null,`${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) · ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects<br>${m.ot} implemented as scheduled · ${notOnTime} not implemented on time`,mktip(`Total Extension Activities: ${n}.`,`Spread across ${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) and ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects.`,`${m.ot} were implemented exactly in their planned quarter; ${notOnTime} were not (early, late, or overdue).`,notOnTime>0?'Review the not-on-time activities to see whether dates need to be reset or resources added.':'Every due activity followed its original schedule.'))+card('✔','Activities Implemented',`${m.im} / ${n}`,ratio(m.im,n),`${pf(ratio(m.im,n))} completed`,actTip(m))+card('◷','For Implementation',m.fi,ratio(m.fi,n),`${pf(ratio(m.fi,n))} remaining`,mktip(`For Implementation: ${m.fi} activities (${pf(ratio(m.fi,n))} of all activities).`,Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>`${v} more are ${k}.`).join(' '),m.behind.length?`${m.behind.length} already passed their target quarter - these are the priority to implement or reschedule.`:'None has passed its target quarter yet.'))
+ K=withActivityTip(card('◎','Total Extension Activities',n,null,`${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) · ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects<br>${m.ot} implemented as scheduled · ${notOnTime} not implemented on time`,mktip(`Total Extension Activities: ${n}.`,`Spread across ${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) and ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects.`,`${m.ot} were implemented exactly in their planned quarter; ${notOnTime} were not (early, late, or overdue).`,notOnTime>0?'Review the not-on-time activities to see whether dates need to be reset or resources added.':'Every due activity followed its original schedule.')),S.acts)+withActivityTip(card('✔','Activities Implemented',`${m.im} / ${n}`,ratio(m.im,n),`${pf(ratio(m.im,n))} completed`,actTip(m)),S.acts.filter(a=>a.s==='Implemented'))+withActivityTip(card('◷','For Implementation',m.fi,ratio(m.fi,n),`${pf(ratio(m.fi,n))} remaining`,mktip(`For Implementation: ${m.fi} activities (${pf(ratio(m.fi,n))} of all activities).`,Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>`${v} more are ${k}.`).join(' '),m.behind.length?`${m.behind.length} already passed their target quarter - these are the priority to implement or reschedule.`:'None has passed its target quarter yet.')),S.acts.filter(a=>a.s==='For Implementation'))
   +card('▦','Schedule Adherence',pf(schedVal),schedVal,`${m.ot} of ${m.cmp} due-or-implemented activities on target`,mktip(`Schedule Adherence: ${pf(schedVal)}.`,`${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly.`,vsTarget(schedVal,TARGETS.schedule),advice(schedVal,TARGETS.schedule,'schedule')))+card('₱','Budget Allocated',m.al?peso(m.tb):'N/A',null,`${m.al} of ${n} activities with numeric allocation`,mktip(`Budget Allocated: ${m.al?peso(m.tb):'N/A'}.`,`${m.al} of ${n} activities have a numeric allocation; ${m.noAl} are N/A (not applicable, not counted as ₱0).`,'This allocation is the base used to compute the Budget Utilization Rate.'))+card('%','Budget Utilization Rate',pf(m.rate),m.rate,`${peso(m.bt)} of ${peso(m.bb)}`,mktip(`Budget Utilization Rate: ${pf(m.rate)} (${peso(m.bt)} of ${peso(m.bb)}).`,vsTarget(m.rate,TARGETS.budget),advice(m.rate,TARGETS.budget,'budget')));
- const rows=a=>{const late=a.s==='For Implementation'&&qv(a.t)!=null&&qv(a.t)<asOf,ua=a.util!=null?peso(a.util):a.unote&&a.unote.length>1?`<span class="bd na">${esc(a.unote)}</span>`:'<span class="bd na">N/A</span>';
+ const rows=a=>{const late=a.s==='For Implementation'&&qv(a.t)!=null&&qv(a.t)<asOf,partner=partnerFunded(a),ua=a.util!=null?peso(a.util):a.unote&&a.unote.length>1?`<span class="bd na">${esc(a.unote)}</span>`:'<span class="bd na">N/A</span>';
   const cmpOk=a.s==='Implemented'&&qv(a.t)!=null&&qv(a.a)!=null,mismatch=cmpOk&&qv(a.a)!==qv(a.t)?(qv(a.a)<qv(a.t)?'Early':'Delayed'):null;
   const actCell=a.s==='Implemented'?`<b>${esc(fmtDate(a.a))}</b>`+(mismatch?`<br><span class="bd ${mismatch==='Early'?'am':'rd'}">Not Met - ${mismatch}</span>`:''):a.a&&a.a!==a.t?`<i title="Expected / rescheduled date">↪ <b>${esc(fmtDate(a.a))}</b></i>`:'-';
-  return`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td><td class="c">${esc(a.t)}</td><td class="c">${actCell}</td><td class="c">${badge(a.s)}${late?'<br><span class="bd rd">Not Met - Overdue</span>':''}</td><td class="c">${cellB(a.alloc,a.note)}</td><td class="c">${ua}</td><td class="c">${a.util!=null&&a.rate!=null?pf(a.rate*100):a.rate!=null?`<span title="Official rate; utilization amount not reported">${pf(a.rate*100)}*</span>`:'<span class="bd na">N/A</span>'}</td></tr>`};
+  return`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td><td class="c">${esc(a.t)}</td><td class="c">${actCell}</td><td class="c">${badge(a.s)}${late?'<br><span class="bd rd">Not Met - Overdue</span>':''}</td><td class="c">${cellB(a.alloc,a.note)}</td><td class="c">${ua}</td><td class="c">${partner?`<span class="bd na" title="${esc(partnerBudgetNote)}">N/A</span>`:a.util!=null&&a.rate!=null?pf(a.rate):a.rate!=null?`<span title="Official rate; utilization amount not reported">${pf(a.rate)}*</span>`:'<span class="bd na">N/A</span>'}</td></tr>`};
  const stt=Object.entries(m.stat).map(([k,v],i)=>[k,v,SC[k]||PAL[(i+2)%6]]),ins=[`${m.im} of ${n} activities implemented; ${m.fi} for implementation${m.n-m.im-m.fi?`; ${Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>v+' '+esc(k)).join(', ')}`:''}.`,
   `Schedule adherence ${pf(schedVal)}: ${m.ot} of ${m.cmp} due-or-implemented activities matched their original target quarter exactly (early, late, or still not implemented past its target quarter all count as Not Met; activities not yet due are excluded). ${vsTarget(schedVal,TARGETS.schedule)} ${advice(schedVal,TARGETS.schedule,'schedule')}`,m.behind.length?`${m.behind.length} for-implementation activities have already passed their target quarter.`:'No for-implementation activity has passed its target quarter.',
   m.rate!=null?`Budget: ${peso(m.bt)} utilized of ${peso(m.bb)} (${pf(m.rate)}) on activities with reported utilization; total allocation ${peso(m.tb)}. ${vsTarget(m.rate,TARGETS.budget)} ${advice(m.rate,TARGETS.budget,'budget')}`:'No numeric budget utilization recorded.',`${m.noAl} of ${n} activities have no numeric allocation (N/A) - partner-supported or not applicable per workbook notes.`];
  const nxt=[m.fi?`Implement ${m.fi} remaining activities: ${m.A.filter(a=>a.s==='For Implementation').slice(0,4).map(a=>esc(short(a))+' ('+esc(a.t)+')').join('; ')}${m.fi>4?'…':''}.`:'All activities implemented.',m.behind.length?'Confirm or reschedule activities past their target quarter.':null,m.noUtil.length?`Submit utilization amounts for ${m.noUtil.length} allocated activities.`:null,'Monitor implementation against target dates and submit reports as each activity completes (Section C).'].filter(Boolean);
  return`<div class="k">${K}</div>
  <div class="g3" style="margin:8px 0">${P('Implementation Status Distribution','',dn(stt,n,'Activities'),'chart')}${P('Budget Performance','',bpanel(m))}</div>
- <div style="margin-bottom:8px">${P('College → Program → Project → Activity',fyLabel(),tbl(S,8,['Act. No.','Activity Title','Target Impl. Date','Actual Impl. Date','Status','Budget Allocation','Budget Utilization','Utilization Rate'],rows)+'<div class="nt" style="padding:0 10px 6px">↪ = expected/rescheduled date · Not Met - Early/Delayed = implemented outside its original target quarter · * official rate with no reported utilization amount · N/A ≠ ₱0.</div>','np')}</div>
+ <div style="margin-bottom:8px">${P('College → Program → Project → Activity',fyLabel(),tbl(S,8,['Act. No.','Activity Title','Target Impl. Date','Actual Impl. Date','Status','Budget Allocation','Budget Utilization','Utilization Rate'],rows)+'<div class="nt" style="padding:0 10px 6px">↪ = expected/rescheduled date · Not Met - Early/Delayed = implemented outside its original target quarter · * official rate with no reported utilization amount · <b>N/A for ₱0 allocation + ₱0 utilization:</b> No University budget was allocated; activity expenses were shouldered by the partner.</div>','np')}</div>
  <div class="g3">${L('Key Highlights',ins)}${L('Next Steps',nxt)}</div>`}
 /* ---- SECTION C ---- */
 const T=['Attendance','Evaluation Report','Terminal Report','Monitoring Tool','Monitoring the Progress','Rescheduling Letters'],DI={S:'',D:'◷ ',P:'⚠ ',N:''},DK={S:'ok',D:'am',P:'rd',N:'na'};
@@ -486,7 +554,7 @@ async function savePending(){if(!pendingWb||!pendingFile)return;
 $('#col').onchange=e=>{st.c=e.target.value;st.p='ALL';fillFilters();render()};
 $('#prog').onchange=e=>{st.p=e.target.value;render()};
 $('#yr').onchange=e=>pickYear(+e.target.value);
-$('#qr').onchange=async e=>{if(!e.target.value)return;st.per=e.target.value;const selected=periodsIndex().find(p=>p.key===st.per);if(selected&&selected.shared)await loadSharedWorkbook(selected.year,selected.quarter,selected.path);else{applyPeriod();fillFilters();render()}};
+$('#qr').onchange=async e=>{if(!e.target.value)return;const selected=periodsIndex().find(p=>p.key===e.target.value);if(selected&&selected.live){loadLiveYear(selected.year,selected.quarter);return}st.per=e.target.value;if(selected&&selected.shared)await loadSharedWorkbook(selected.year,selected.quarter,selected.path);else{applyPeriod();fillFilters();render()}};
 $('#delp').onclick=async()=>{const cur=periodsIndex().find(p=>p.key===st.per);if(!cur||!cur.shared)return;
  if($('#delp').dataset.armed!=='1'){$('#delp').dataset.armed='1';$('#delp').textContent='Confirm?';clearTimeout(window.__delTimer);window.__delTimer=setTimeout(()=>{$('#delp').dataset.armed='';$('#delp').textContent='✕'},4000);return}
  $('#delp').dataset.armed='';$('#delp').textContent='✕';
@@ -555,13 +623,14 @@ async function loadSharedWorkbook(year, quarter, exactPath=null) {
   if(!Object.keys(test.cols).length){console.error('Shared workbook contains no REF_* college sheets.');return false}
   DB=test;st.per=`shared-${year}-${quarter}`;st.c='ALL';st.p='ALL';
   $('#src').textContent=`FY ${year} ${quarter}`;$('#delp').disabled=false;
-  await fillPeriods();fillFilters();render();
+  await fillPeriods();fillFilters();
+render();
   console.log(`Loaded shared workbook: ${storagePath}`);return true;
  }catch(err){console.error('Shared workbook loading failed:',err);return false}
 }
  
 (async () => {
-  const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbwaiBnGIato35-zwyqq5A6NHUB0umSdXYMEQvp0gYlULc8hn7QLd-LCcS5f_1zq1T5B/exec';
+  const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbycWdulSvWlGksfgVQEAnQgnCvt3vCIUfGuDMXmbg4zR6uZdzZFy0dRxVR5er2CwKa5/exec';
   const statusEl=document.getElementById('liveStatus'), srcEl=document.getElementById('src');
   let livePayload=null, liveYears=[];
 
@@ -591,16 +660,118 @@ async function loadSharedWorkbook(year, quarter, exactPath=null) {
     }
     return 'Q'+best;
   }
-  function loadLiveYear(year){
-    const maps=yearMaps(livePayload), rowsMap=maps[year]; if(!rowsMap)return false;
+  /* Quarterly snapshots in CONSOLIDATED_PERFORMANCE are stored vertically using
+     Year + Quarter + Indicator_ID. Discover the available snapshots for the selected year. */
+  function quarterTagFromRow(row){
+    for(const cell of (row||[])){
+      const m=S1(cell).match(/Extension\s+Services\s*-\s*Quarter\s*([1-4])\s*FY\s*(20\d{2})/i);
+      if(m)return {quarter:'Q'+m[1],year:+m[2]};
+    }
+    return null;
+  }
+  /* Discover the quarterly blocks that are actually present in the Google Sheet.
+     REF_* sheets are authoritative for block availability; the consolidated snapshot
+     table is also checked for backward compatibility. */
+  function liveQuartersForYear(rowsMap,year){
+    const set=new Set();
+    for(const [name,rows] of Object.entries(rowsMap||{})){
+      if(/^REF_/i.test(name)){
+        for(const r of rows||[]){
+          const tag=quarterTagFromRow(r);
+          if(tag&&tag.year===+year)set.add(tag.quarter);
+        }
+      }
+      if(/^CONSOLIDATED/i.test(name)){
+        let h=-1,yi=-1,qi=-1,ii=-1;
+        for(let x=0;x<(rows||[]).length;x++){
+          const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+          yi=z.indexOf('year'); qi=z.indexOf('quarter');
+          ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+          if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+        }
+        if(h>=0)for(let x=h+1;x<rows.length;x++){
+          const r=rows[x]||[], y=+r[yi], q=S1(r[qi]).toUpperCase();
+          if(y===+year&&/^Q[1-4]$/.test(q)&&/^PI-\d+/i.test(S1(r[ii])))set.add(q);
+        }
+      }
+    }
+    return QORD.filter(q=>set.has(q));
+  }
+  /* Keep ONLY the requested quarter's repeated report blocks in every REF_* sheet.
+     This prevents a later Q4 block from being parsed into Q3 (and vice versa) across
+     Sections A, B, C and D, including SDG/activity-profile fields. */
+  function selectRefQuarterBlocks(rows,year,quarter){
+    const out=[]; let active=false, sawTaggedBlock=false;
+    for(const r0 of rows||[]){
+      const r=Array.isArray(r0)?r0.slice():[];
+      const tag=quarterTagFromRow(r);
+      if(tag){
+        sawTaggedBlock=true;
+        active=(tag.year===+year && tag.quarter===quarter);
+        if(active)out.push(r);
+        continue;
+      }
+      // A new report title precedes each quarter tag. Hold it temporarily so a
+      // non-selected block cannot leak its title/content into the selected block.
+      if(/^CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT/i.test(S1(r[0]))){
+        out.push(['__REPORT_TITLE_PENDING__']);
+        continue;
+      }
+      if(active)out.push(r);
+    }
+    if(!sawTaggedBlock)return (rows||[]).map(r=>Array.isArray(r)?r.slice():[]);
+    // Restore report titles only immediately before selected Extension Services rows.
+    const clean=[];
+    for(let i=0;i<out.length;i++){
+      if(out[i]&&out[i][0]==='__REPORT_TITLE_PENDING__')continue;
+      if(i===0 || !/Extension\s+Services\s*-\s*Quarter/i.test(S1(out[i][0]))) clean.push(out[i]);
+      else clean.push(['CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT'],out[i]);
+    }
+    return clean;
+  }
+  /* Build a quarter-specific rows map before the existing parser/calculations run. */
+  function rowsMapForLiveQuarter(rowsMap,year,quarter){
+    const out={};
+    for(const [name,rows0] of Object.entries(rowsMap||{})){
+      if(/^REF_/i.test(name)){
+        out[name]=selectRefQuarterBlocks(rows0,year,quarter);
+        continue;
+      }
+      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
+      if(!/^CONSOLIDATED/i.test(name)){out[name]=rows;continue}
+      let h=-1,yi=-1,qi=-1,ii=-1;
+      for(let x=0;x<rows.length;x++){
+        const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+        yi=z.indexOf('year'); qi=z.indexOf('quarter');
+        ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+        if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+      }
+      if(h<0){out[name]=rows;continue}
+      rows[h]=(rows[h]||[]).slice(ii);
+      for(let x=h+1;x<rows.length;x++){
+        const r=rows[x]||[], id=S1(r[ii]);
+        if(!/^PI-\d+/i.test(id))continue;
+        rows[x]=(+r[yi]===+year && S1(r[qi]).toUpperCase()===quarter)?r.slice(ii):[];
+      }
+      out[name]=rows;
+    }
+    return out;
+  }
+  function loadLiveYear(year,requestedQuarter=null){
+    const maps=yearMaps(livePayload), rawRowsMap=maps[year]; if(!rawRowsMap)return false;
+    let qs=liveQuartersForYear(rawRowsMap,year);
+    if(!qs.length)qs=[detectQuarter(rawRowsMap)];
+    const currentQ='Q'+(Math.floor(new Date().getMonth()/3)+1);
+    const q=(requestedQuarter&&qs.includes(requestedQuarter))?requestedQuarter:(qs.includes(currentQ)?currentQ:qs[qs.length-1]);
+    const rowsMap=rowsMapForLiveQuarter(rawRowsMap,year,q);
     DB=buildFromRowsMap(rowsMap);
     if(!DB||!Object.keys(DB.cols||{}).length)throw new Error('No REF_* college data could be parsed for '+year+'.');
-    const q=detectQuarter(rowsMap); EMB_Y=year; EMB_Q=q;
-    sharedPeriods=[{key:`live-${year}-${q}`,year,quarter:q,label:`FY ${year} ${q} · Live Google Sheet`,shared:false}];
+    EMB_Y=year; EMB_Q=q;
+    sharedPeriods=qs.map(x=>({key:`live-${year}-${x}`,year,quarter:x,label:`FY ${year} ${x} · Live Google Sheet`,shared:false,live:true}));
     st.per=`live-${year}-${q}`; st.c='ALL'; st.p='ALL';
     document.getElementById('yr').innerHTML=liveYears.map(y=>`<option value="${y}">${y}</option>`).join('');
     document.getElementById('yr').value=year;
-    document.getElementById('qr').innerHTML=`<option value="${st.per}">Quarter ${q.slice(1)}</option>`;
+    document.getElementById('qr').innerHTML=qs.map(x=>`<option value="live-${year}-${x}">Quarter ${x.slice(1)}</option>`).join('');
     document.getElementById('qr').value=st.per;
     srcEl.textContent=`FY ${year} ${q} · Live from Google Sheets`;
     fillFilters(); render(); return true;
@@ -617,7 +788,10 @@ async function loadSharedWorkbook(year, quarter, exactPath=null) {
       if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
       const current=+document.getElementById('yr').value;
       const keepC=st.c, keepP=st.p;
-       loadLiveYear(liveYears.includes(current)?current:liveYears[liveYears.length-1]);
+       const liveYear=liveYears.includes(current)?current:liveYears[liveYears.length-1];
+       const selectedPeriod=periodsIndex().find(p=>p.key===st.per);
+       const keepQ=(selectedPeriod&&selectedPeriod.live&&selectedPeriod.year===liveYear)?selectedPeriod.quarter:null;
+       loadLiveYear(liveYear,keepQ);
        if(keepC==='ALL'||DB.cols[keepC]){st.c=keepC;if(keepC==='ALL'){st.p='ALL'}else{const ps=new Set(DB.cols[keepC].acts.map(a=>a.prog));st.p=(keepP==='ALL'||ps.has(keepP))?keepP:'ALL'}fillFilters();render();}
       statusEl.textContent='● LIVE GOOGLE SHEET';
       statusEl.title='Dashboard data is loaded directly from Google Sheets. Last refresh: '+new Date().toLocaleString();
@@ -629,21 +803,70 @@ async function loadSharedWorkbook(year, quarter, exactPath=null) {
     }
   }
   document.getElementById('yr').onchange=e=>loadLiveYear(+e.target.value);
-  document.getElementById('qr').onchange=()=>{};
+  document.getElementById('qr').onchange=e=>{
+    const m=String(e.target.value||'').match(/^live-(\d{4})-(Q[1-4])$/);
+    if(m) loadLiveYear(+m[1],m[2]);
+  };
   await refreshLive();
   // Refresh automatically every 60 seconds while the dashboard is open.
   setInterval(refreshLive,60000);
 })();
+</script><div id="cardDialogBackdrop" class="card-dialog-backdrop" aria-hidden="true">
+  <div class="card-dialog" role="dialog" aria-modal="true" aria-labelledby="cardDialogTitle">
+    <div class="card-dialog-head">
+      <b id="cardDialogTitle">Details</b>
+      <button type="button" class="card-dialog-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="cardDialogBody" class="card-dialog-body"></div>
+  </div>
+</div>
 
-// Centered dialog used only by Overview KPI cards. Other sections keep their existing tooltips.
-const kpiModal=document.getElementById('kpiModal'),kpiTitle=document.getElementById('kpiModalTitle'),kpiBody=document.getElementById('kpiModalBody');
-function closeKpiModal(){kpiModal.classList.remove('open');kpiModal.setAttribute('aria-hidden','true');document.body.classList.remove('modal-open')}
-function openKpiModal(cardEl){
- kpiTitle.textContent=cardEl.dataset.modalTitle||'Details';
- const lines=(cardEl.dataset.modalBody||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
- kpiBody.innerHTML=lines.map(x=>`<div class="modal-line">${esc(x)}</div>`).join('');
- kpiModal.classList.add('open');kpiModal.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');kpiModal.querySelector('.kpi-close').focus();
-}
-document.addEventListener('click',e=>{const c=e.target.closest('.kc.ov-pop');if(c){openKpiModal(c);return}if(e.target===kpiModal||e.target.closest('.kpi-close'))closeKpiModal()});
-document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&document.activeElement?.classList.contains('ov-pop')){e.preventDefault();openKpiModal(document.activeElement)}else if(e.key==='Escape'&&kpiModal.classList.contains('open'))closeKpiModal()});
-</script></body></html>
+<script>
+(function(){
+  const backdrop=document.getElementById('cardDialogBackdrop');
+  const title=document.getElementById('cardDialogTitle');
+  const body=document.getElementById('cardDialogBody');
+  if(!backdrop||!title||!body)return;
+
+  function closeDialog(){
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden','true');
+    document.body.classList.remove('dialog-open');
+  }
+  function openCard(card){
+    const label=(card.querySelector('.kh b')||{}).textContent||'Details';
+    const nativeTip=card.getAttribute('title')||'';
+    const drill=card.querySelector('.act-hover-tip');
+    title.textContent=label.trim();
+    body.innerHTML='';
+    if(nativeTip){
+      const s=document.createElement('div');
+      s.className='card-dialog-summary';
+      s.textContent=nativeTip;
+      body.appendChild(s);
+    }
+    if(drill) body.appendChild(drill.cloneNode(true));
+    if(!nativeTip && !drill){
+      const s=document.createElement('div');
+      s.className='card-dialog-summary';
+      s.textContent='No additional details are available for this card.';
+      body.appendChild(s);
+    }
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden','false');
+    document.body.classList.add('dialog-open');
+  }
+
+  document.addEventListener('click',function(e){
+    const card=e.target.closest('.kc');
+    if(card){
+      e.preventDefault();
+      openCard(card);
+      return;
+    }
+    if(e.target===backdrop || e.target.closest('.card-dialog-close')) closeDialog();
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDialog(); });
+})();
+</script>
+</body></html>
