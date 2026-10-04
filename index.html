@@ -62,7 +62,7 @@ small{color:var(--mut);font-size:9.5px}tr.cb small,.hd small{color:inherit}
 .k5{grid-template-columns:repeat(5,1fr)}@media(max-width:1000px){.k5{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.k5{grid-template-columns:1fr}}.kc{position:relative;cursor:pointer}.kc::after{content:'\24D8';position:absolute;top:6px;right:9px;font-size:12px;line-height:1;color:var(--mut)}.kc .kh{padding-right:16px}
 /* Hover activity drill-down tooltip */
 .kc.has-act-tip{cursor:pointer}
-.act-hover-tip{display:none;position:absolute;z-index:80;left:50%;top:calc(100% + 6px);transform:translateX(-50%);width:max-content;min-width:270px;max-width:430px;max-height:340px;overflow:auto;padding:9px 11px;border:1px solid #cfd5d2;border-radius:6px;background:#f2f2f2;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.14);white-space:normal;pointer-events:none}
+.act-hover-tip{display:none;position:absolute;z-index:80;left:50%;top:calc(100% + 6px);transform:translateX(-50%);width:max-content;min-width:270px;max-width:430px;max-height:340px;overflow:auto;padding:9px 11px;border:1px solid #cfd5d2;border-radius:6px;background:#fff;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.14);white-space:normal;pointer-events:none}
 .kc.has-act-tip:hover .act-hover-tip{display:block}
 .act-tip-item{padding:6px 0;border-bottom:1px solid #d8ddda}.act-tip-item:last-child{border-bottom:0}.act-tip-item div{margin:1px 0}.act-tip-item b{font-weight:700;color:#17302A}
 
@@ -88,7 +88,7 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 /* Simple documentary hover details - same clean behavior as scorecards */
 .has-doc-tip{position:relative;cursor:pointer}
 .has-doc-tip:hover{background:#e7e7e7!important;color:#17302A!important}
-.doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#f2f2f2;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
+.doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#fff;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
 .doc-tip b{font-weight:700;color:#17302A}
 .has-doc-tip:hover .doc-tip{display:block}
 
@@ -287,8 +287,14 @@ const dn=(segs,c,l)=>{let a=0;const tot=segs.reduce((s,x)=>s+x[1],0),g=tot?segs.
 const projL=j=>j.no!=null?`PROJECT ${j.no}${j.title?' - '+esc(j.title):''}`:'';
 const progL=(c,p)=>p===NOP?p:esc(DB.cols[c].progFull[p]||p);
 const short=a=>`${a.col} · ${a.prog===NOP?'':a.prog+' · '}${a.proj.no!=null?'P'+a.proj.no+' ':''}Act. ${a.n}`;
-const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip">${A.map(a=>`<div class="act-tip-item"><div><b>College</b> ${esc(a.col||'—')}</div><div><b>Program</b> ${a.prog===NOP?'—':esc(a.prog)}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?`Project ${a.proj.no}${a.proj.title?' - '+esc(a.proj.title):''}`:'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div>`};
-const withActivityTip=(html,A)=>{if(!A||!A.length)return html;const marked=html.replace('class="kc"','class="kc has-act-tip"'),i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+activityTipHtml(A)+marked.slice(i)};
+const fullProg=a=>a.prog===NOP?'—':(DB.cols[a.col]&&DB.cols[a.col].progFull[a.prog]||a.prog);
+const programTipHtml=A=>{const ps=[...new Set((A||[]).map(a=>fullProg(a)).filter(x=>x&&x!=='—'))];return ps.length?`<div class="act-hover-tip">${ps.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
+const projectTipHtml=A=>{const seen=new Set(),rows=[];(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!seen.has(k)){seen.add(k);rows.push([pr,pj])}});return rows.length?`<div class="act-hover-tip">${rows.map(([pr,pj])=>`<div class="act-tip-item"><div><b>Program</b> ${esc(pr)}</div><div><b>Project</b> ${esc(pj)}</div></div>`).join('')}</div>`:''};
+const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip">${A.map(a=>`<div class="act-tip-item"><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div>`};
+const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';let t=String(row.rem||'').replace(/One\s*\(1\).*?(?:target|established)[^\n]*/ig,'').trim();let vals=t.split(/\n|;|\|/).map(x=>x.replace(/^\s*\d+[.)-]?\s*/, '').trim()).filter(Boolean);if(!vals.length&&row.rem)vals=[String(row.rem).trim()];return vals.length?`<div class="act-hover-tip">${vals.map(x=>`<div class="act-tip-item">${esc(x)}</div>`).join('')}</div>`:''};
+const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
+const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
+const withActivityTip=(html,A)=>withHoverTip(html,activityTipHtml(A));
 const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v):+i.v.toFixed(2);
 const idl=i=>i.id||'#'+i.n,rol=(I,re)=>I.find(i=>re.test(i.pi));
 const remL=t=>String(t||'').split('\n').map(esc).join('<br>');
@@ -353,11 +359,11 @@ function vO(S){
  const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
  const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
  const K=[
-  withActivityTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),A),
-  withActivityTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),A),
-  withActivityTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),A.filter(a=>a.s==='Implemented')),
-  card('✎','Partnerships Established',partnerships==null?'N/A':partnerships,null,partnerships==null?'No reported data':`${partnerships} partnership${partnerships===1?'':'s'} established`),
-  card('◎','SDGs Addressed',sdgCount||'N/A',null,sdgCount?`${sdgCount} Sustainable Development Goal${sdgCount===1?'':'s'} addressed`:'No reported data'),
+  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
+  withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
+  withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A.filter(a=>a.s==='Implemented'))),
+  withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':partnerships,null,partnerships==null?'No reported data':`${partnerships} partnership${partnerships===1?'':'s'} established`),partnerTipHtml(I)),
+  withHoverTip(card('◎','SDGs Addressed',sdgCount||'N/A',null,sdgCount?`${sdgCount} Sustainable Development Goal${sdgCount===1?'':'s'} addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
   card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} faculty member${faculty===1?'':'s'} involved`),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
