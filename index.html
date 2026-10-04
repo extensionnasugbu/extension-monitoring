@@ -203,7 +203,7 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim()})});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19])})});
  /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
@@ -213,7 +213,7 @@ function parseSheet(rows,sheet){
      if(/^Prepared by/i.test(sa))break;
      if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
      if(num(a)==null||!S1(b))continue;
-     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim()});
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19])});
    }
    if(clean.length)R.erows=clean;
  }
@@ -387,7 +387,18 @@ function vO(S){
  const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
  const pt=profileTotals(A);
  const facultyPeople=facultyStats(A);
- const faculty=facultyPeople.length?facultyPeople.length:(pt.faculty!=null?pt.faculty:indActual(I,/faculty/i));
+ const faculty=facultyPeople.length?facultyPeople.length:null;
+ /* Faculty participation must be based only on explicitly reported faculty names and
+    the explicitly reported "Number of Faculty in the College". Never infer or
+    default a faculty count from activity existence or other performance indicators. */
+ const facultyDenoms=S.cs.map(c=>{
+   const vals=DB.cols[c].acts.map(a=>a.profile&&a.profile.totalFaculty).filter(v=>v!=null&&v>0);
+   return vals.length?Math.max(...vals):null;
+ });
+ const hasFacultyDenom=facultyDenoms.length>0&&facultyDenoms.every(v=>v!=null);
+ const totalFaculty=hasFacultyDenom?facultyDenoms.reduce((a,b)=>a+b,0):null;
+ const facultyPct=(faculty!=null&&totalFaculty!=null&&totalFaculty>0)?faculty/totalFaculty*100:null;
+ const facultyReported=faculty!=null&&totalFaculty!=null;
  const students=pt.students!=null?pt.students:indActual(I,/student/i);
  const bene=indActual(I,/external beneficiaries/i,/beneficiar/i);
  const q=pt.q||satisfactionFromIndicators(I,'quality'),t=pt.t||satisfactionFromIndicators(I,'timeliness');
@@ -401,7 +412,7 @@ function vO(S){
   withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
   withHoverTip(card('◎','SDGs Addressed',sdgCount!=null?`${sdgCount} / 17`:'N/A',sdgCount!=null?ratio(sdgCount,17):null,sdgCount!=null?`${sdgCount} of 17 Sustainable Development Goals addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
-  withHoverTip(card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} unique faculty member${faculty===1?'':'s'} involved`),facultyTipHtml(A)),
+  withHoverTip(card('●','Faculty Involved',facultyReported?`${faculty} / ${totalFaculty}`:'N/A',facultyPct,facultyReported?`${pf(facultyPct)} of faculty were involved in extension activities`:'No reported data'),facultyTipHtml(A)),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
   withHoverTip(card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),ratingTipHtml(A,'quality')),
