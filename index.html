@@ -195,7 +195,7 @@ function M(A){const stat={};A.forEach(a=>stat[a.s]=(stat[a.s]||0)+1);
 /*ENDCORE*/
 /* ---- 5. UI HELPERS ---- */
 const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const pf=x=>x==null?'N/A':+x.toFixed(2)+'%',peso=n=>n==null?'N/A':'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),nv=x=>x==null?'N/A':x;
+const pf=x=>x==null?'N/A':Math.round(x)+'%',peso=n=>n==null?'N/A':'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),nv=x=>x==null?'N/A':x;
 const TARGETS={budget:70,schedule:90,submission:95};
 const vsTarget=(val,tgt)=>val==null?'':val>=tgt?`This meets or exceeds the ${tgt}% target.`:`This is below the ${tgt}% target.`;
 const ADVICE={
@@ -226,10 +226,10 @@ const dn=(segs,c,l)=>{let a=0;const tot=segs.reduce((s,x)=>s+x[1],0),g=tot?segs.
 const projL=j=>j.no!=null?`PROJECT ${j.no}${j.title?' - '+esc(j.title):''}`:'';
 const progL=(c,p)=>p===NOP?p:esc(DB.cols[c].progFull[p]||p);
 const short=a=>`${a.col} · ${a.prog===NOP?'':a.prog+' · '}${a.proj.no!=null?'P'+a.proj.no+' ':''}Act. ${a.n}`;
-const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x*100):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v*100):+i.v.toFixed(2);
+const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v):+i.v.toFixed(2);
 const idl=i=>i.id||'#'+i.n,rol=(I,re)=>I.find(i=>re.test(i.pi));
 const remL=t=>String(t||'').split('\n').map(esc).join('<br>');
-function TvA(I){const bar=i=>{const r=i.t&&i.a!=null?i.a/i.t:null;return`<div class="tr"><div class="tl"><span><b>${esc(idl(i))}</b> ${esc(i.pi)}</span><b>${r==null?'N/A':(r>1?'▲ ':'')+(i.u==='pct'?`${pf(i.a*100)} / ${pf(i.t*100)}`:`${i.a} / ${i.t}`)}</b></div><div class="pb">${r==null?'':`<i class="${r>=1?'g':'a'}" style="width:${Math.min(r*100,100)}%"></i>`}</div></div>`},
+function TvA(I){const bar=i=>{const r=i.t&&i.a!=null?i.a/i.t:null;return`<div class="tr"><div class="tl"><span><b>${esc(idl(i))}</b> ${esc(i.pi)}</span><b>${r==null?'N/A':(r>1?'▲ ':'')+(i.u==='pct'?`${pf(i.a)} / ${pf(i.t)}`:`${i.a} / ${i.t}`)}</b></div><div class="pb">${r==null?'':`<i class="${r>=1?'g':'a'}" style="width:${Math.min(r*100,100)}%"></i>`}</div></div>`},
  g=(l,x)=>{const r=I.filter(i=>i.u===x);return r.length?`<div class="gh">${l}</div>`+r.map(bar).join(''):''};
  return g('Counts','n')+g('Percentages (%)','pct')+'<div class="nt">Accomplishment ÷ target, capped at 100%; ▲ = above target; N/A = accomplishment not reported.</div>'}
 function tbl(S,n,head,rowFn,prog=true){let h='',lc,lp,lj;S.acts.forEach(a=>{if(S.level==='ALL'&&a.col!==lc){lc=a.col;lp=lj=null;h+=`<tr class="cb"><td colspan="${n}">${esc(lc)} - ${esc(DB.cols[lc].name)}</td></tr>`}
@@ -318,7 +318,7 @@ function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cm
  const rows=a=>{const late=a.s==='For Implementation'&&qv(a.t)!=null&&qv(a.t)<asOf,ua=a.util!=null?peso(a.util):a.unote&&a.unote.length>1?`<span class="bd na">${esc(a.unote)}</span>`:'<span class="bd na">N/A</span>';
   const cmpOk=a.s==='Implemented'&&qv(a.t)!=null&&qv(a.a)!=null,mismatch=cmpOk&&qv(a.a)!==qv(a.t)?(qv(a.a)<qv(a.t)?'Early':'Delayed'):null;
   const actCell=a.s==='Implemented'?`<b>${esc(fmtDate(a.a))}</b>`+(mismatch?`<br><span class="bd ${mismatch==='Early'?'am':'rd'}">Not Met - ${mismatch}</span>`:''):a.a&&a.a!==a.t?`<i title="Expected / rescheduled date">↪ <b>${esc(fmtDate(a.a))}</b></i>`:'-';
-  return`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td><td class="c">${esc(a.t)}</td><td class="c">${actCell}</td><td class="c">${badge(a.s)}${late?'<br><span class="bd rd">Not Met - Overdue</span>':''}</td><td class="c">${cellB(a.alloc,a.note)}</td><td class="c">${ua}</td><td class="c">${a.util!=null&&a.rate!=null?pf(a.rate*100):a.rate!=null?`<span title="Official rate; utilization amount not reported">${pf(a.rate*100)}*</span>`:'<span class="bd na">N/A</span>'}</td></tr>`};
+  return`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td><td class="c">${esc(a.t)}</td><td class="c">${actCell}</td><td class="c">${badge(a.s)}${late?'<br><span class="bd rd">Not Met - Overdue</span>':''}</td><td class="c">${cellB(a.alloc,a.note)}</td><td class="c">${ua}</td><td class="c">${a.util!=null&&a.rate!=null?pf(a.rate):a.rate!=null?`<span title="Official rate; utilization amount not reported">${pf(a.rate)}*</span>`:'<span class="bd na">N/A</span>'}</td></tr>`};
  const stt=Object.entries(m.stat).map(([k,v],i)=>[k,v,SC[k]||PAL[(i+2)%6]]),ins=[`${m.im} of ${n} activities implemented; ${m.fi} for implementation${m.n-m.im-m.fi?`; ${Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>v+' '+esc(k)).join(', ')}`:''}.`,
   `Schedule adherence ${pf(schedVal)}: ${m.ot} of ${m.cmp} due-or-implemented activities matched their original target quarter exactly (early, late, or still not implemented past its target quarter all count as Not Met; activities not yet due are excluded). ${vsTarget(schedVal,TARGETS.schedule)} ${advice(schedVal,TARGETS.schedule,'schedule')}`,m.behind.length?`${m.behind.length} for-implementation activities have already passed their target quarter.`:'No for-implementation activity has passed its target quarter.',
   m.rate!=null?`Budget: ${peso(m.bt)} utilized of ${peso(m.bb)} (${pf(m.rate)}) on activities with reported utilization; total allocation ${peso(m.tb)}. ${vsTarget(m.rate,TARGETS.budget)} ${advice(m.rate,TARGETS.budget,'budget')}`:'No numeric budget utilization recorded.',`${m.noAl} of ${n} activities have no numeric allocation (N/A) - partner-supported or not applicable per workbook notes.`];
