@@ -148,14 +148,14 @@ function normalizeTerminal(acts){const g=new Map();
   const pick=['P','D','S'].map(c=>cells.find(l=>dc(l)===c)).find(Boolean);
   if(pick)list[list.length-1].docs[2]=pick})}
 function parseSheet(rows,sheet){
- const R={ind:[],acts:[],crows:[],name:'',code:'',progFull:{},sign:null};let sec=null,hdr=0,prog=NOP,proj=null;
+ const R={ind:[],acts:[],crows:[],erows:[],name:'',code:'',progFull:{},sign:null};let sec=null,hdr=0,prog=NOP,proj=null;
  rows.forEach((r,ri)=>{const a=r[0],b=r[1],sa=typeof a==='string'?a.trim():a;
   if(typeof sa==='string'){let m;
-   if(/^[ABC]\.\s/.test(sa)){sec=sa[0];hdr=0;return}
+   if(/^[A-E]\.\s*/.test(sa)){sec=sa[0];hdr=0;return}
    if(m=/^(?:College|Department):\s*(.+?)(?:\s*\(([^)]+)\))?(?:\s+-\s+(.+))?$/i.exec(sa)){if(!R.name){R.name=S1(m[1]);R.code=m[2]?S1(m[2]):''}
     if(m[3]){const pm=/\(([^)]+)\)/.exec(m[3]);if(pm)R.progFull[pm[1]]=S1(m[3])}return}
    if(/^Prepared by/i.test(sa)){sec=null;const j=rows.findIndex((x,i)=>i>ri&&typeof x[0]==='string'&&x[0].trim());if(j>0)R.sign=[0,3,5].map(c=>[S1(rows[ri][c]),S1(rows[j][c]),S1(rows[j+1]&&rows[j+1][c])]);return}
-   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))?1:0; return}
+   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))||(sec==='E'&&/activity title/.test(hb))?1:0; return}
    if(m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*(\d+)\s*(.*)$/i.exec(sa)){prog=S1(m[1]);let rest=m[3].trim();const fm=/\(([^()]*IMPLEMENTATION[^()]*)\)\s*$/i.exec(rest);if(fm)rest=rest.slice(0,fm.index).trim();proj={key:sa,no:+m[2],title:S1(rest),fy:fm?S1(fm[1]):''};return}
    if(/^PROGRAM\s/i.test(sa)){prog=S1(sa.replace(/^PROGRAM\s+/i,''));proj={key:sa,no:null,title:'',fy:''};return}
    if(/^(CONSOLIDATED|Extension Services)/i.test(sa))return}
@@ -163,9 +163,12 @@ function parseSheet(rows,sheet){
   if(sec==='A'&&S1(b)&&(/^PI-\d+$/i.test(S1(a))||num(a)!=null))R.ind.push({id:/^PI-\d+$/i.test(S1(a))?S1(a):'',n:S1(a),pi:S1(b),src:S1(r[2]),t:num(r[3]),a:num(r[4]),v:num(r[5]),st:S1(r[6]),rem:r[7]==null?'':String(r[7]),u:isPct(S1(b))?'pct':'n'});
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
-  else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))})});
+  else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
+  else if(sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0)})});
  const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
  R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
+ const epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
+ R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
 /* Live Google Sheet is authoritative for all documentary requirement cells.
    Do not relocate or normalize Terminal Report values; preserve the exact row/status/date from Section C. */
  if(!R.code)R.code=sheet.replace(/^REF_/i,'').replace(/_/g,' ');return R}
@@ -260,7 +263,9 @@ const indActual=(I,...res)=>{const i=indFind(I,...res);return i&&i.a!=null?i.a:n
 const countCompletedPrograms=A=>{const g=new Map();A.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!g.has(k))g.set(k,[]);g.get(k).push(a)});return [...g.values()].filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length};
 const countPrograms=A=>new Set(A.filter(a=>a.prog!==NOP).map(a=>a.col+'|'+a.prog)).size;
 const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig],service:[/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig],sdg:[/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig]};return uniqText(A,patterns[kind][0])};
-function distFromText(A,kind){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const g=new Map();A.forEach(a=>{const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt))){String(m[1]).split(/\s*,\s*|\s*\/\s*|\s*&\s*/).map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))}});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
+function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
+function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
+function profileTotals(A){let faculty=0,students=0,q=[0,0,0,0,0],t=[0,0,0,0,0],hasF=false,hasS=false,hasQ=false,hasT=false;A.forEach(a=>{const p=a.profile;if(!p)return;if(p.faculty!=null){faculty+=p.faculty;hasF=true}if(p.students!=null){students+=p.students;hasS=true}p.quality.forEach((v,i)=>{q[i]+=v;if(v)hasQ=true});p.timeliness.forEach((v,i)=>{t[i]+=v;if(v)hasT=true})});const sat=x=>{const den=x.reduce((a,b)=>a+b,0),num=x[2]+x[3]+x[4];return den?{den,num,rate:num/den*100}:null};return{faculty:hasF?faculty:null,students:hasS?students:null,q:hasQ?sat(q):null,t:hasT?sat(t):null}}
 function distPanel(title,items,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);return P(title,'',dn(segs,total,unit)+`<div class="nt" style="margin-top:8px">${items.map(([n,v])=>`<b>${esc(n)}</b> — ${v}`).join('<br>')}</div>`,'chart')}
 function satisfactionFromIndicators(I,kind){const re=kind==='quality'?/(quality\s*(?:and|&)\s*relevance|quality|relevance)/i:/timeliness/i;const rows=I.filter(i=>re.test(i.pi));const vals={P:0,F:0,S:0,VS:0,E:0};let found=false;rows.forEach(i=>{const text=(i.pi+' '+i.rem);for(const k of Object.keys(vals)){const m=new RegExp('(?:^|\\b)'+k+'\\s*[:=-]\\s*(\\d+(?:\\.\\d+)?)','i').exec(text);if(m){vals[k]+=+m[1];found=true}}});if(!found)return null;const den=Object.values(vals).reduce((a,b)=>a+b,0),num=vals.S+vals.VS+vals.E;return{...vals,den,num,rate:den?num/den*100:null}}
 
@@ -270,10 +275,11 @@ function vO(S){
  const progTotal=countPrograms(A),progDone=countCompletedPrograms(A);
  const partnerships=indActual(I,/partnership/i,/MOU/i,/MOA/i);
  const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
- const faculty=indActual(I,/faculty/i);
- const students=indActual(I,/student/i);
+ const pt=profileTotals(A);
+ const faculty=pt.faculty!=null?pt.faculty:indActual(I,/faculty/i);
+ const students=pt.students!=null?pt.students:indActual(I,/student/i);
  const bene=indActual(I,/external beneficiaries/i,/beneficiar/i);
- const q=satisfactionFromIndicators(I,'quality'),t=satisfactionFromIndicators(I,'timeliness');
+ const q=pt.q||satisfactionFromIndicators(I,'quality'),t=pt.t||satisfactionFromIndicators(I,'timeliness');
  const qInd=indFind(I,/quality.*relevance/i,/percentage of trainees/i),tInd=indFind(I,/timeliness/i);
  const qRate=q?q.rate:(qInd&&qInd.a!=null?qInd.a:null),tRate=t?t.rate:(tInd&&tInd.a!=null?tInd.a:null);
  const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
@@ -287,8 +293,8 @@ function vO(S){
   card('●','Faculty Involved',faculty==null?'N/A':faculty,null,'reported faculty involvement'),
   card('◆','Students Involved',students==null?'N/A':students,null,'reported student involvement'),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,'reported beneficiaries reached'),
-  card('★','Quality & Relevance Satisfaction',qRate==null?'N/A':pf(qRate),qRate,q?`${q.num} S+VS+E of ${q.den} total ratings`:'Uses reported indicator until P/F/S/VS/E counts are exposed in the live sheet'),
-  card('◷','Timeliness Satisfaction',tRate==null?'N/A':pf(tRate),tRate,t?`${t.num} S+VS+E of ${t.den} total ratings`:'Uses reported indicator until P/F/S/VS/E counts are exposed in the live sheet')
+  card('★','Quality & Relevance Satisfaction',qRate==null?'N/A':pf(qRate),qRate,q?`${q.num} S+VS+E of ${q.den} total ratings`:'Calculated from activity-level P/F/S/VS/E trainee ratings'),
+  card('◷','Timeliness Satisfaction',tRate==null?'N/A':pf(tRate),tRate,t?`${t.num} S+VS+E of ${t.den} total ratings`:'Calculated from activity-level P/F/S/VS/E trainee ratings')
  ];
  return `<div class="k k5">${K.join('')}</div><div class="g4">${distPanel('Extension Agenda Distribution',agendaItems)}${distPanel('Community Service Distribution',serviceItems)}${distPanel('Extension Agenda Contribution',sdgItems,'SDG contributions')}</div>`;
 }
