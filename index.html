@@ -110,8 +110,8 @@ tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var
 .chart-click{cursor:pointer;border-radius:6px;transition:background .15s ease,outline .15s ease}.chart-click:hover{background:#eef3f0}.chart-click.sel{background:#e3eee8;outline:1px solid #a9cbb8}.profile-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}.profile-head b{font-size:12px}.profile-head button{border:1px solid #9fb7ac;background:#fff;border-radius:6px;padding:5px 9px;font-size:10px;cursor:pointer}.profile-head button:disabled{opacity:.55;cursor:default;background:#f4f7f5}.profile-empty{font-size:11px;color:var(--mut);padding:10px 0}.activity-profile{margin-top:10px}.activity-profile table td:first-child{font-weight:700;white-space:nowrap}
 @media(max-width:1000px){.g4.overview-charts{grid-template-columns:1fr 1fr}.g4.overview-charts>.p:last-child{grid-column:1/-1}}
 
-.sdg-rank-panel{margin-top:10px}.sdg-rank{padding:12px 14px;display:flex;flex-direction:column;gap:7px}.sdg-rank-row{display:grid;grid-template-columns:280px minmax(180px,1fr) 90px;gap:12px;align-items:center;border-radius:5px;padding:2px 4px}.sdg-goal{min-height:38px;display:flex;align-items:center;padding:3px 0;color:var(--ink);font-weight:800;font-size:11px;line-height:1.15;background:transparent!important;white-space:nowrap}.sdg-num,.sdg-name{font-size:11px;line-height:1.15;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.15px;white-space:nowrap}.sdg-rank-track{height:28px;background:#eef3f0;border-radius:2px;position:relative;cursor:help}.sdg-rank-fill{height:100%;border-radius:2px;background:var(--leaf)!important}.sdg-rank-value{font-size:11px;font-weight:800;color:var(--ink);white-space:nowrap}.sdg-rank-note{padding:0 14px 12px;color:var(--mut);font-size:10px;font-style:italic}.sdg-rank-row:hover{background:#f5f8f6}.sdg-tip{display:none;position:absolute;z-index:50;left:12px;top:calc(100% + 6px);width:min(560px,70vw);max-height:320px;overflow:auto;background:#fff;border:1px solid var(--bd);border-radius:7px;padding:10px 12px;box-shadow:0 8px 22px rgba(17,55,44,.16);font-size:10.5px;line-height:1.35;color:var(--tx)}.sdg-rank-track:hover .sdg-tip,.sdg-rank-track:focus-within .sdg-tip{display:block}.sdg-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.sdg-tip-item:last-child{border-bottom:0}.sdg-tip b{color:var(--ink)}
-@media(max-width:800px){.sdg-rank-row{grid-template-columns:230px minmax(100px,1fr) 72px}.sdg-goal,.sdg-name,.sdg-num{font-size:10px}.sdg-tip{width:min(480px,75vw)}}
+.sdg-rank-panel{margin-top:10px}.sdg-rank{padding:12px 14px;display:flex;flex-direction:column;gap:7px}.sdg-rank-row{display:grid;grid-template-columns:330px minmax(180px,1fr) 90px;gap:12px;align-items:center;border-radius:5px;padding:2px 4px}.sdg-goal{min-height:38px;display:flex;align-items:center;padding:3px 0;color:var(--ink);font-weight:800;font-size:11px;line-height:1.15;background:transparent!important;white-space:nowrap}.sdg-num,.sdg-name{font-size:11px;line-height:1.15;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.15px;white-space:nowrap}.sdg-rank-track{height:28px;background:#eef3f0;border-radius:2px;position:relative;cursor:pointer}.sdg-rank-fill{height:100%;border-radius:2px;background:var(--leaf)!important}.sdg-rank-value{font-size:11px;font-weight:800;color:var(--ink);white-space:nowrap}.sdg-rank-note{padding:0 14px 12px;color:var(--mut);font-size:10px;font-style:italic}.sdg-rank-row:hover{background:#f5f8f6}.sdg-tip{display:none;position:absolute;z-index:50;left:12px;top:calc(100% + 6px);width:min(560px,70vw);max-height:320px;overflow:auto;background:#fff;border:1px solid var(--bd);border-radius:7px;padding:10px 12px;box-shadow:0 8px 22px rgba(17,55,44,.16);font-size:10.5px;line-height:1.35;color:var(--tx)}.sdg-rank-track:hover .sdg-tip,.sdg-rank-track:focus-within .sdg-tip{display:block}.sdg-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.sdg-tip-item:last-child{border-bottom:0}.sdg-tip b{color:var(--ink)}
+@media(max-width:800px){.sdg-rank-row{grid-template-columns:300px minmax(100px,1fr) 72px}.sdg-goal,.sdg-name,.sdg-num{font-size:10px}.sdg-tip{width:min(480px,75vw)}}
 @media(max-width:700px){.g4.overview-charts{grid-template-columns:1fr}.g4.overview-charts>.p:last-child{grid-column:auto}.sdgbar-row{grid-template-columns:minmax(0,1fr) 90px 54px}}
 </style></head><body><div class="wrap">
 <div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University<br>ARASOF - Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>Extension Services Office<br><span id="liveStatus" style="font-weight:700">● LIVE GOOGLE SHEET</span><br><span id="src" style="opacity:.85"></span></div></div>
@@ -225,7 +225,23 @@ function buildFromWb(wb){return build(wb.SheetNames,wbRowsFn(wb))}
 function buildFromRowsMap(m){return build(Object.keys(m),n=>m[n])}
 /* ---- 3. FILTERING + 4. CALCULATIONS ---- */
 let DB=null,EMBEDDED_DB=null,st={c:'ALL',p:'ALL',t:'O',per:'__embedded__'};
+function selectedPeriodQuarterValue(){
+ const cur=periodsIndex().find(p=>p.key===st.per);
+ if(!cur||!cur.year||!cur.quarter)return null;
+ const qn=parseInt(String(cur.quarter).replace(/\D/g,''),10);
+ return qn>=1&&qn<=4 ? Number(cur.year)*4+qn-1 : null;
+}
+function activityBelongsToSelectedQuarter(a){
+ const pq=selectedPeriodQuarterValue();
+ if(pq==null)return true;
+ /* Quarterly workbooks are cumulative. The activity's TARGET implementation quarter
+    determines which quarter dashboard it belongs to, so earlier-quarter activities
+    are excluded from Q4 counts, SDG bars, and SDG hover details. */
+ const tq=qv(a&&a.t);
+ return tq==null ? false : tq===pq;
+}
 function scope(){const codes=Object.keys(DB.cols),cs=st.c==='ALL'?codes:[st.c];let acts=cs.flatMap(c=>DB.cols[c].acts.map(a=>({...a,col:c})));
+ acts=acts.filter(activityBelongsToSelectedQuarter);
  const level=st.c==='ALL'?'ALL':st.p==='ALL'?'COL':'PROG';if(level==='PROG')acts=acts.filter(a=>a.prog===st.p);
  return{level,cs,acts,ind:level==='ALL'?(DB.cons?DB.cons.ind:[]):DB.cols[st.c].ind}}
 const sm=(x,k)=>x.reduce((s,a)=>s+a[k],0),ratio=(a,b)=>b?a/b*100:null;
