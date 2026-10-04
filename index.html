@@ -234,11 +234,10 @@ function selectedPeriodQuarterValue(){
 function activityBelongsToSelectedQuarter(a){
  const pq=selectedPeriodQuarterValue();
  if(pq==null)return true;
- /* Quarterly dashboards are cumulative "as of" reports. Include activities targeted
-    from Q1 up to the selected quarter. For example, Q4 shows Q1 + Q2 + Q3 + Q4,
-    while activities scheduled after the selected quarter remain excluded. */
+ /* Quarter views are independent snapshots. Show only activities belonging to
+    the selected quarter so updating Q4 cannot change the Q3 activity/SDG view. */
  const tq=qv(a&&a.t);
- return tq==null ? false : tq<=pq;
+ return tq==null ? false : tq===pq;
 }
 function scope(){const codes=Object.keys(DB.cols),cs=st.c==='ALL'?codes:[st.c];let acts=cs.flatMap(c=>DB.cols[c].acts.map(a=>({...a,col:c})));
  acts=acts.filter(activityBelongsToSelectedQuarter);
@@ -666,13 +665,30 @@ render();
     }
     return QORD.filter(q=>set.has(q));
   }
-  /* Convert only the selected quarterly PI snapshot back to the dashboard's original
-     Section A column shape. REF_* activity sheets remain untouched and are filtered
-     cumulatively through the selected quarter. */
+  /* Each REF_* annual sheet may contain separate Q1-Q4 report blocks stacked
+     vertically. Keep ONLY the block for the quarter selected in the dashboard.
+     This preserves Q3 as its own historical snapshot when Q4 is later updated,
+     including activities, budget, documentary requirements and Section E / SDG data. */
+  function refRowsForQuarter(rows,year,quarter){
+    const src=(rows||[]).map(r=>Array.isArray(r)?r.slice():[]), hits=[];
+    for(let i=0;i<src.length;i++){
+      const text=(src[i]||[]).map(v=>S1(v)).filter(Boolean).join(' | ');
+      const m=text.match(/(?:Extension\s+Services\s*[-–—:]?\s*)?(?:Quarter\s*([1-4])|Q([1-4]))(?:\s*[,\-–—]?\s*(?:FY\s*)?(20\d{2}))?/i);
+      if(m){const q='Q'+(m[1]||m[2]), y=m[3]?+m[3]:+year;if(y===+year)hits.push({i,q})}
+    }
+    const starts=hits.filter((h,k,a)=>k===0||h.i!==a[k-1].i);
+    const pos=starts.findIndex(h=>h.q===quarter);
+    if(pos<0)return src; // backward compatibility with older single-block REF sheets
+    const start=starts[pos].i, next=starts.slice(pos+1).find(h=>h.i>start);
+    return src.slice(start,next?next.i:src.length);
+  }
+  /* Convert the selected quarterly PI snapshot back to the dashboard's original
+     Section A shape, and isolate the matching quarter block in every REF_* sheet. */
   function rowsMapForLiveQuarter(rowsMap,year,quarter){
     const out={};
     for(const [name,rows0] of Object.entries(rowsMap||{})){
-      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
+      let rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
+      if(/^REF_/i.test(name)){out[name]=refRowsForQuarter(rows,year,quarter);continue}
       if(!/^CONSOLIDATED/i.test(name)){out[name]=rows;continue}
       let h=-1,yi=-1,qi=-1,ii=-1;
       for(let x=0;x<rows.length;x++){
