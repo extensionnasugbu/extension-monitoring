@@ -377,7 +377,7 @@ function vO(S){
   withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
   withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
-  withHoverTip(card('◎','SDGs Addressed',sdgCount||'N/A',null,sdgCount?`${sdgCount} Sustainable Development Goal${sdgCount===1?'':'s'} addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
+  withHoverTip(card('◎','SDGs Addressed',sdgCount!=null?`${sdgCount} / 17`:'N/A',sdgCount!=null?ratio(sdgCount,17):null,sdgCount!=null?`${sdgCount} of 17 Sustainable Development Goals addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
   card('●','Faculty Involved',faculty==null?'N/A':faculty,null,faculty==null?'No reported data':`${faculty} faculty member${faculty===1?'':'s'} involved`),
   card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
   card('◉','Beneficiaries Reached',bene==null?'N/A':bene,null,bene==null?'No reported data':`${bene} beneficiaries reached`),
