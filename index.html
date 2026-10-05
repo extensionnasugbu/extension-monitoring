@@ -432,8 +432,22 @@ function vO(S){
     the explicitly reported "Number of Faculty in the College". Never infer or
     default a faculty count from activity existence or other performance indicators. */
  const facultyDenoms=S.cs.map(c=>{
-   const vals=DB.cols[c].acts.map(a=>a.profile&&a.profile.totalFaculty).filter(v=>v!=null&&v>0);
-   return vals.length?Math.max(...vals):null;
+   /* Total faculty is a college-level denominator from the Google Sheet. Read it
+      from ALL Activity Profile rows in that college, not only activities remaining
+      after quarter/program filtering. The sheet repeats the same college total
+      (e.g. CICS = 14), so use the reported positive value. */
+   const vals=(DB.cols[c].erows||[])
+     .map(r=>r&&r.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   if(vals.length)return Math.max(...vals);
+
+   // Backward-compatible fallback for older workbook layouts.
+   const legacy=(DB.cols[c].acts||[])
+     .map(a=>a.profile&&a.profile.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   return legacy.length?Math.max(...legacy):null;
  });
  const hasFacultyDenom=facultyDenoms.length>0&&facultyDenoms.every(v=>v!=null);
  const totalFaculty=hasFacultyDenom?facultyDenoms.reduce((a,b)=>a+b,0):null;
