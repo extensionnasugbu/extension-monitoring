@@ -347,37 +347,62 @@ const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agen
 function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
 function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 function facultyNameList(v){
- const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim(); if(!raw)return[];
- /* Faculty names in the live workbook may arrive as separate lines, semicolon/
-    bullet-delimited text, numbered lists, or a flattened string where the next
-    academic/professional title marks the next person. Keep commas intact so
-    "Surname, First Name" remains one faculty member. */
- let text=raw
-   .replace(/\s+(?=\d+\s*[.)-]\s*(?=[A-Za-z]))/g,'\n')
-   .replace(/\s*,\s*(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/gi,'\n');
- let parts=text.split(/\n+|;|\||•|·/).map(x=>x.trim()).filter(Boolean);
- const titleStart=/(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/gi;
+ const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim();
+ if(!raw)return[];
+
+ // Google Sheets may return the multi-select faculty cell as a CSV-like string:
+ // "Surname, Firstname M.","Surname, Firstname M.",...
+ // Extract quoted entries first so the comma inside a person's name is NEVER
+ // mistaken for a separator.
+ const quoted=[];
+ raw.replace(/"([^"]+)"/g,(m,name)=>{name=S1(name);if(name)quoted.push(name);return m;});
+ if(quoted.length)return quoted;
+
+ // Otherwise support actual line breaks, semicolons, pipes and bullets.
+ let parts=raw.split(/\n+|;|\||•|·/).map(x=>S1(x).replace(/^["']|["']$/g,'')).filter(Boolean);
+
+ // Also support flattened values where professional titles mark the next person.
+ const titleStart=/(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/g;
  parts=parts.flatMap(x=>x.split(titleStart))
-   .map(x=>x.trim().replace(/^(?:\d+\s*[.)-]\s*)?[•·\-–—]*\s*/,''))
-   .map(x=>x.replace(/[;,]+\s*$/,''))
+   .map(x=>S1(x).replace(/^[•·\-–—]+\s*/,'').replace(/^["']|["']$/g,''))
    .filter(Boolean);
+
  return parts;
 }
-function facultyCleanName(v){return S1(v).replace(/^(?:(?:Dr|Prof|Assoc\.?\s*Prof|Asst\.?\s*Prof|Mr|Ms|Mrs|Engr)\.?\s+)+/i,'').trim()}
-function facultyKey(v){return facultyCleanName(v).toLowerCase().replace(/\b(?:jr|sr|ii|iii|iv)\.?$/i,'').replace(/[^a-z0-9]+/g,' ').trim()}
-function facultyLastName(v){
- const n=facultyCleanName(v).replace(/\s+/g,' ').trim(); if(!n)return'';
- if(n.includes(','))return S1(n.split(',')[0]).toLowerCase();
- const words=n.split(' ').filter(Boolean); while(words.length>1&&/^(jr\.?|sr\.?|ii|iii|iv)$/i.test(words[words.length-1]))words.pop();
- if(words.length>=2){const particles=new Set(['de','del','dela','de la','di','da','dos','das','van','von','san','santa']);let i=words.length-1;while(i>0&&particles.has(words[i-1].toLowerCase()))i--;return words.slice(i).join(' ').toLowerCase()}
- return n.toLowerCase();
+function facultyKey(v){
+ return S1(v).toLowerCase()
+   .replace(/\b(associate professor|assistant professor|dr|prof|assoc|asst|mr|ms|mrs|engr)\.?\b/g,'')
+   .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function facultySortKey(name){
+ const clean=S1(name).replace(/^(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s*/i,'');
+ // Current faculty entries use "Surname, Given name"; sorting by this value
+ // therefore sorts correctly by surname. For "Given Surname", use final token.
+ if(clean.includes(','))return clean.toLowerCase();
+ const p=clean.split(/\s+/).filter(Boolean);
+ return ((p[p.length-1]||'')+' '+clean).toLowerCase();
 }
 function facultyStats(A){
  const people=new Map();
- (A||[]).forEach(a=>{const p=a.profile;if(!p||!p.facultyNames)return;const seen=new Set();facultyNameList(p.facultyNames).forEach(name=>{const k=facultyKey(name);if(!k||seen.has(k))return;seen.add(k);if(!people.has(k))people.set(k,{name,count:0,implemented:0,pending:0,activities:[]});const person=people.get(k);person.count++;const done=/^implemented$/i.test(S1(a.s));if(done)person.implemented++;else person.pending++;person.activities.push(a)})});
+ (A||[]).forEach(a=>{
+   const p=a.profile;
+   if(!p||!p.facultyNames)return;
+   const seen=new Set();
+   facultyNameList(p.facultyNames).forEach(name=>{
+     const k=facultyKey(name);
+     if(!k||seen.has(k))return;
+     seen.add(k);
+     if(!people.has(k))people.set(k,{name:S1(name),count:0,implemented:0,pending:0,activities:[]});
+     const person=people.get(k);
+     person.count++;
+     const done=/^implemented$/i.test(S1(a.s));
+     if(done)person.implemented++; else person.pending++;
+     person.activities.push(a);
+   });
+ });
  const actSort=(a,b)=>((a.proj&&a.proj.no!=null?a.proj.no:9999)-(b.proj&&b.proj.no!=null?b.proj.no:9999))||((a.n||0)-(b.n||0))||S1(a.title).localeCompare(S1(b.title));
  people.forEach(p=>p.activities.sort(actSort));
- return [...people.values()].sort((a,b)=>facultyLastName(a.name).localeCompare(facultyLastName(b.name))||facultyCleanName(a.name).localeCompare(facultyCleanName(b.name)));
+ return [...people.values()].sort((a,b)=>facultySortKey(a.name).localeCompare(facultySortKey(b.name)));
 }
 function facultyTipHtml(A){
  const f=facultyStats(A);if(!f.length)return '<div class="act-hover-tip"><div class="nt">No faculty names reported in the current scope.</div></div>';
@@ -910,7 +935,8 @@ render();
     const isActivities=/^Activities Implemented$/i.test(label.trim());
     const isFaculty=/^Faculty Involved$/i.test(label.trim());
     const cardCount=(card.querySelector('.kv')||{}).textContent||'';
-    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:isFaculty?`Faculty Involvement — ${cardCount.trim()} Unique Faculty`:label.trim();
+    const facultyBlocks=isFaculty&&drill?drill.querySelectorAll(':scope > .act-tip-item.project-status-item').length:0;
+    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:isFaculty?`Faculty Involvement — ${facultyBlocks||cardCount.trim()} Unique Faculty`:label.trim();
     body.innerHTML='';
     if(nativeTip && !isProjects && !isFaculty){
       const s=document.createElement('div');
