@@ -1011,6 +1011,31 @@ render();
       if(!res.ok)throw new Error(`HTTP ${res.status}`);
       const payload=await res.json();
       if(!payload.success)throw new Error(payload.error||'Apps Script returned success:false');
+
+      /* The Activity Profile was extended with column T = Length of Training.
+         Some older Apps Script deployments return only the earlier column range,
+         which leaves PI-03 using stale/missing training lengths. Refresh each
+         annual REF sheet directly from the Google Sheet when possible so column T
+         is always included. If Google blocks the direct request, the Apps Script
+         payload remains the fallback. */
+      const GOOGLE_SHEET_ID='1D6ONgf1bokRpdMTFzLdK02AB8NbLvVYNpmGvq5hqGo';
+      async function refreshRefSheetsWithFullRange(pl){
+        const names=Object.keys(pl.sheets||{}).filter(n=>/^REF_.*_20\d{2}$/i.test(n));
+        await Promise.all(names.map(async name=>{
+          try{
+            const url=`https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
+            const rr=await fetch(url,{cache:'no-store',credentials:'omit'});
+            if(!rr.ok)return;
+            const txt=await rr.text(); if(!txt||/^<!doctype html/i.test(txt.trim()))return;
+            const wb=XLSX.read(txt,{type:'string',raw:true});
+            const ws=wb.Sheets[wb.SheetNames[0]]; if(!ws)return;
+            const full=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:null});
+            if(full.length)pl.sheets[name]=full;
+          }catch(e){console.warn('Direct full-range refresh failed for',name,e)}
+        }));
+        return pl;
+      }
+      await refreshRefSheetsWithFullRange(payload);
       livePayload=payload; const maps=yearMaps(payload); liveYears=Object.keys(maps).map(Number).sort((a,b)=>a-b);
       if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
       const current=+document.getElementById('yr').value;
