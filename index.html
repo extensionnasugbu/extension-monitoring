@@ -537,25 +537,34 @@ function autoPiRows(S){
  };
  const p2=rol(I,/approved extension programs/i), p3=rol(I,/external beneficiaries/i), p4=rol(I,/^Percentage of trainees/i);
 
- /* PI-02: a program is conducted only when every activity currently belonging
-    to that approved program is Implemented. */
+ /* Annual PI rule: calculate PI-02/03/04 only from activities whose schedule
+    belongs to the fiscal year currently selected in the dashboard. This keeps
+    prior/future years out of the annual accomplishment and automatically rolls
+    forward when FY 2027, FY 2028, etc. is selected. */
+ const curPeriod=periodsIndex().find(p=>p.key===st.per);
+ const selectedYear=curPeriod&&curPeriod.year?Number(curPeriod.year):EMB_Y;
+ const AY=A.filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===selectedYear});
+
+ /* PI-02: a program is conducted only when every activity scheduled within the
+    selected fiscal year for that approved program is Implemented. */
  if(p2){
   const groups=new Map();
-  A.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(a)});
+  AY.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(a)});
   const programs=[...groups.values()], done=programs.filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length;
-  const pending=A.filter(a=>a.prog!==NOP&&a.s!=='Implemented');
+  const pending=AY.filter(a=>a.prog!==NOP&&a.s!=='Implemented');
   let rem='';
   if(pending.length){
-   rem=`${pending.length} activit${pending.length===1?'y remains':'ies remain'} for implementation in FY 2026:\n`+pending.map((a,j)=>`${j+1}. ${a.proj&&a.proj.no!=null?'Project '+a.proj.no+' ':''}Activity ${a.n}`).join('\n');
-  }else if(programs.length){rem='All planned projects and activities under the approved program(s) were completed/implemented in FY 2026.'}
-  setResult(p2,done,rem,pending.length>0);
+   rem=`${pending.length} activit${pending.length===1?'y remains':'ies remain'} for implementation in FY ${selectedYear}:\n`+pending.map((a,j)=>`${j+1}. ${a.proj&&a.proj.no!=null?'Project '+a.proj.no+' ':''}Activity ${a.n}`).join('\n');
+  }else if(programs.length){rem=`All planned projects and activities scheduled for FY ${selectedYear} under the approved program(s) were completed/implemented.`}
+  else rem=`No activities scheduled for FY ${selectedYear}.`;
+  setResult(p2,programs.length?done:null,rem,pending.length>0);
  }
 
  /* PI-03: each implemented activity's beneficiary count is the number of valid
-    Quality & Relevance evaluation responses (P+F+S+VS+E). This removes the need
-    to re-enter the same beneficiary count in Section A. */
+    Quality & Relevance evaluation responses (P+F+S+VS+E), for the selected
+    fiscal year only. */
  if(p3){
-  const rows=A.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>({a,n:a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0)})).filter(x=>x.n>0);
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>({a,n:a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0)})).filter(x=>x.n>0);
   const total=rows.reduce((u,x)=>u+x.n,0);
   const rem=rows.length?'Breakdown of beneficiaries based on valid trainee ratings per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}-${x.n}`).join('\n'):'No beneficiary evaluation responses reported for implemented activities.';
   setResult(p3,rows.length?total:null,rem,rows.length>0);
@@ -564,7 +573,7 @@ function autoPiRows(S){
  /* PI-04: official satisfaction = (S + VS + E) / all valid Quality & Relevance
     responses. Aggregate the response counts first, then compute one percentage. */
  if(p4){
-  const rows=A.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{const x=a.profile.quality.map(v=>Number(v)||0),den=x.reduce((u,v)=>u+v,0),num=x[2]+x[3]+x[4];return{a,den,num,rate:den?num/den*100:null}}).filter(x=>x.den>0);
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{const x=a.profile.quality.map(v=>Number(v)||0),den=x.reduce((u,v)=>u+v,0),num=x[2]+x[3]+x[4];return{a,den,num,rate:den?num/den*100:null}}).filter(x=>x.den>0);
   const den=rows.reduce((u,x)=>u+x.den,0), num=rows.reduce((u,x)=>u+x.num,0), rate=den?num/den*100:null;
   const rem=rows.length?'Trainees rating the training satisfactory or higher per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}-${Math.round(x.rate)}%`).join('\n'):'No Quality & Relevance evaluation responses reported for implemented activities.';
   setResult(p4,rate,rem,rate!=null);
