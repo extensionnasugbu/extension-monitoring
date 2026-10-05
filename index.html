@@ -303,7 +303,7 @@ const programTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(a.prog===
 const projectTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!groups.has(k))groups.set(k,{pr,pj,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Completed':'○ Not Yet Completed'}</span></div><div><b>Program</b> ${esc(x.pr)}</div><div><b>Project</b> ${esc(x.pj)}</div></div>`).join('')}</div>`:''};
 const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip project-status-list">${A.map(a=>{const done=a.s==='Implemented';return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ Implemented':'○ '+esc(a.s||'Not Yet Implemented')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`};
 const ratingTipHtml=(A,kind)=>{const key=kind==='quality'?'quality':'timeliness',label=kind==='quality'?'Quality':'Timeliness';const rows=(A||[]).map(a=>{const x=a.profile&&Array.isArray(a.profile[key])?a.profile[key]:[];const den=x.reduce((u,v)=>u+(Number(v)||0),0),num=(Number(x[2])||0)+(Number(x[3])||0)+(Number(x[4])||0),rate=den?num/den*100:null;const implemented=a.s==='Implemented';const status=den>0?'Rated':(implemented?'No Rating Reported':'For Implementation');return {a,x,den,rate,status}});return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>{const rated=x.status==='Rated',implemented=x.a.s==='Implemented';return `<div class="act-tip-item project-status-item ${rated?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${rated?'✓ Rated — '+label+': '+pf(x.rate):'○ '+x.status}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div>${rated?`<div><b>Rating breakdown</b> P: ${x.x[0]||0} · F: ${x.x[1]||0} · S: ${x.x[2]||0} · VS: ${x.x[3]||0} · E: ${x.x[4]||0}</div>`:(implemented?'<div><b>Rating</b> Evaluation data not reported.</div>':'')}</div>`}).join('')}</div>`:''};
-const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';const raw=String(row.rem||'').replace(/\r/g,'').trim();const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);let vals=lines.filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim());if(!vals.length){vals=raw.split(/;|\|/).map(x=>x.trim()).filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim())}if(!vals.length){vals=lines.filter(x=>!/(?:\b(?:one|two|three|four|five|six|seven|eight|nine|ten)\b\s*\(\d+\)|\b\d+\s*\([^)]*\))[^\n]*(?:MOA|MOU|partnership|target|established)/i.test(x)&&!/(?:target|accomplishment)\s*[:=-]/i.test(x))}const actual=Math.max(0,Math.round(Number(row.a)||0));return vals.length?`<div class="act-hover-tip project-status-list">${vals.map((x,i)=>{const explicitDone=/(established|signed|notarized|executed|completed)/i.test(x);let status='';if(explicitDone)status='Established';else if(/for\s*sign(?:ing|ature)?|await(?:ing)?\s*sign(?:ing|ature)?|signature/i.test(x))status='For Signing';else if(/(?:for\s*)?(?:legal|legal\s*office|legal\s*counsel|institution(?:'s)?\s*legal)\s*(?:review|evaluation)|review\s*(?:by|of)\s*(?:the\s*)?(?:legal|legal\s*office|legal\s*counsel|institution(?:'s)?\s*legal)/i.test(x))status="For Review (Institution's Legal)";else if(/for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|review\s*(?:by|of)\s*(?:the\s*)?(?:partner|partner\s*agency|agency|counterpart)|partner(?:\s*agency)?\s*(?:review|evaluation)/i.test(x))status='For Review (Partner Agency)';else if(/exploratory|exploration|initial\s*(?:discussion|coordination|meeting)|potential\s*partnership|prospective\s*partner/i.test(x))status='For Exploratory Meeting';else status=i<actual?'Established':'For Exploratory Meeting';const done=status==='Established';let agency=x.replace(/\s*\([^)]*(?:established|sign(?:ing|ature)?|review|partner|legal|exploratory|pending|ongoing|approval|draft)[^)]*\)\s*$/i,'').replace(/\s*[-–—:]\s*(?:Established|For\s*Signing|For\s*Review.*|For\s*Exploratory.*|Pending)\s*$/i,'').trim();return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓':'○'} ${status}</span></div><div><b>Partnership</b> ${esc(agency)}</div></div>`}).join('')}</div>`:''};
+const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';const raw=String(row.rem||'').replace(/\r/g,'').trim();const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);let vals=lines.filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim());if(!vals.length){vals=raw.split(/;|\|/).map(x=>x.trim()).filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim())}if(!vals.length){vals=lines.filter(x=>!/(?:\b(?:one|two|three|four|five|six|seven|eight|nine|ten)\b\s*\(\d+\)|\b\d+\s*\([^)]*\))[^\n]*(?:MOA|MOU|partnership|target|established)/i.test(x)&&!/(?:target|accomplishment)\s*[:=-]/i.test(x))}const actual=Math.max(0,Math.round(Number(row.a)||0));const classify=(x,i)=>{if(/\b(established|signed|notarized|executed|completed)\b/i.test(x))return 'Established';if(/for\s*sign(?:ing|ature)?|await(?:ing)?\s*sign(?:ing|ature)?|awaiting\s*signature/i.test(x))return 'For Signing';if(/for\s*review\s*\(\s*(?:institution(?:'|’)?s?\s*)?legal\s*\)|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|(?:institution(?:'|’)?s?\s*)?legal\s*(?:office|counsel)?\s*(?:review|evaluation)|review\s*(?:by|of)\s*(?:the\s*)?(?:institution(?:'|’)?s?\s*)?legal/i.test(x))return "For Review (Institution’s Legal)";if(/for\s*review\s*\(\s*(?:partner|partner\s*agency|agency)\s*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|review\s*(?:by|of)\s*(?:the\s*)?(?:partner|partner\s*agency|agency|counterpart)|partner(?:\s*agency)?\s*(?:review|evaluation)/i.test(x))return 'For Review (Partner Agency)';if(/exploratory|exploration|initial\s*(?:discussion|coordination|meeting)|potential\s*partnership|prospective\s*partner/i.test(x))return 'For Exploratory Meeting';return i<actual?'Established':'For Exploratory Meeting'};return vals.length?`<div class="act-hover-tip project-status-list">${vals.map((x,i)=>{const status=classify(x);const done=status==='Established';let agency=x.replace(/\s*\((?:established|signed|notarized|executed|completed|for\s*sign(?:ing|ature)?|for\s*review\s*\([^)]*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|for\s*exploratory(?:\s*meeting)?)\)\s*$/i,'').replace(/\s*[-–—:]\s*(?:Established|For\s*Signing|For\s*Review\s*\([^)]*\)|For\s*Exploratory\s*Meeting)\s*$/i,'').trim();return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${status}</span></div><div><b>Partnership</b> ${esc(agency)}</div></div>`}).join('')}</div>`:''};
 const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
 const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
 const withActivityTip=(html,A)=>withHoverTip(html,activityTipHtml(A));
@@ -347,22 +347,62 @@ const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agen
 function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
 function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
 function facultyNameList(v){
- const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim(); if(!raw)return[];
- // Primary separators are the actual line breaks used in the Google Sheet, plus
- // semicolons/bullets/pipes. If a payload has flattened the line breaks, split
- // again whenever a new academic/professional title starts.
- let parts=raw.split(/\n+|;|\||•|·/).map(x=>x.trim()).filter(Boolean);
+ const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim();
+ if(!raw)return[];
+
+ // Google Sheets may return the multi-select faculty cell as a CSV-like string:
+ // "Surname, Firstname M.","Surname, Firstname M.",...
+ // Extract quoted entries first so the comma inside a person's name is NEVER
+ // mistaken for a separator.
+ const quoted=[];
+ raw.replace(/"([^"]+)"/g,(m,name)=>{name=S1(name);if(name)quoted.push(name);return m;});
+ if(quoted.length)return quoted;
+
+ // Otherwise support actual line breaks, semicolons, pipes and bullets.
+ let parts=raw.split(/\n+|;|\||•|·/).map(x=>S1(x).replace(/^["']|["']$/g,'')).filter(Boolean);
+
+ // Also support flattened values where professional titles mark the next person.
  const titleStart=/(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/g;
- parts=parts.flatMap(x=>x.split(titleStart)).map(x=>x.trim().replace(/^[•·\-–—]+\s*/,'' )).filter(Boolean);
+ parts=parts.flatMap(x=>x.split(titleStart))
+   .map(x=>S1(x).replace(/^[•·\-–—]+\s*/,'').replace(/^["']|["']$/g,''))
+   .filter(Boolean);
+
  return parts;
 }
-function facultyKey(v){return S1(v).toLowerCase().replace(/\b(dr|prof|assoc|asst|mr|ms|mrs|engr|associate professor|assistant professor)\.?\b/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
+function facultyKey(v){
+ return S1(v).toLowerCase()
+   .replace(/\b(associate professor|assistant professor|dr|prof|assoc|asst|mr|ms|mrs|engr)\.?\b/g,'')
+   .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function facultySortKey(name){
+ const clean=S1(name).replace(/^(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s*/i,'');
+ // Current faculty entries use "Surname, Given name"; sorting by this value
+ // therefore sorts correctly by surname. For "Given Surname", use final token.
+ if(clean.includes(','))return clean.toLowerCase();
+ const p=clean.split(/\s+/).filter(Boolean);
+ return ((p[p.length-1]||'')+' '+clean).toLowerCase();
+}
 function facultyStats(A){
  const people=new Map();
- (A||[]).forEach(a=>{const p=a.profile;if(!p||!p.facultyNames)return;const seen=new Set();facultyNameList(p.facultyNames).forEach(name=>{const k=facultyKey(name);if(!k||seen.has(k))return;seen.add(k);if(!people.has(k))people.set(k,{name,count:0,implemented:0,pending:0,activities:[]});const person=people.get(k);person.count++;const done=/^implemented$/i.test(S1(a.s));if(done)person.implemented++;else person.pending++;person.activities.push(a)})});
+ (A||[]).forEach(a=>{
+   const p=a.profile;
+   if(!p||!p.facultyNames)return;
+   const seen=new Set();
+   facultyNameList(p.facultyNames).forEach(name=>{
+     const k=facultyKey(name);
+     if(!k||seen.has(k))return;
+     seen.add(k);
+     if(!people.has(k))people.set(k,{name:S1(name),count:0,implemented:0,pending:0,activities:[]});
+     const person=people.get(k);
+     person.count++;
+     const done=/^implemented$/i.test(S1(a.s));
+     if(done)person.implemented++; else person.pending++;
+     person.activities.push(a);
+   });
+ });
  const actSort=(a,b)=>((a.proj&&a.proj.no!=null?a.proj.no:9999)-(b.proj&&b.proj.no!=null?b.proj.no:9999))||((a.n||0)-(b.n||0))||S1(a.title).localeCompare(S1(b.title));
  people.forEach(p=>p.activities.sort(actSort));
- return [...people.values()].sort((a,b)=>a.name.localeCompare(b.name));
+ return [...people.values()].sort((a,b)=>facultySortKey(a.name).localeCompare(facultySortKey(b.name)));
 }
 function facultyTipHtml(A){
  const f=facultyStats(A);if(!f.length)return '<div class="act-hover-tip"><div class="nt">No faculty names reported in the current scope.</div></div>';
@@ -386,14 +426,59 @@ function vO(S){
  const partnershipTarget=indTarget(I,/partnership/i,/MOU/i,/MOA/i);
  const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
  const pt=profileTotals(A);
- const facultyPeople=facultyStats(A);
+ /* Faculty numerator: count DISTINCT names from the selected college's Activity
+    Profile list. Do not count a faculty member more than once even when the same
+    person appears in several activities. For a specific program, keep the current
+    scoped activity logic so the numerator reflects that program only. */
+ const facultyPeople=(S.level==='PROG')
+   ? facultyStats(A)
+   : (()=> {
+       const people=new Map();
+       S.cs.forEach(c=>{
+         (DB.cols[c].erows||[]).forEach(r=>{
+           if(!r||!r.facultyNames)return;
+           facultyNameList(r.facultyNames).forEach(name=>{
+             const k=c+'|'+facultyKey(name); // college-qualified distinct key
+             if(!facultyKey(name))return;
+             if(!people.has(k))people.set(k,{name:S1(name)});
+           });
+         });
+       });
+       return [...people.values()];
+     })();
  const faculty=facultyPeople.length?facultyPeople.length:null;
  /* Faculty participation must be based only on explicitly reported faculty names and
     the explicitly reported "Number of Faculty in the College". Never infer or
     default a faculty count from activity existence or other performance indicators. */
  const facultyDenoms=S.cs.map(c=>{
-   const vals=DB.cols[c].acts.map(a=>a.profile&&a.profile.totalFaculty).filter(v=>v!=null&&v>0);
-   return vals.length?Math.max(...vals):null;
+   /* Total faculty is a college-level denominator from the Google Sheet. Read it
+      from ALL Activity Profile rows in that college, not only activities remaining
+      after quarter/program filtering. The sheet repeats the same college total
+      (e.g. CICS = 14), so use the reported positive value. */
+   const vals=(DB.cols[c].erows||[])
+     .map(r=>r&&r.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   /* Build the college denominator from the complete faculty-name list itself.
+      This is the authoritative roster requested for the dashboard (e.g. 14 CICS
+      faculty). */
+   const roster=new Set();
+   (DB.cols[c].erows||[]).forEach(r=>{
+     if(!r||!r.facultyNames)return;
+     facultyNameList(r.facultyNames).forEach(name=>{
+       const k=facultyKey(name);
+       if(k)roster.add(k);
+     });
+   });
+   if(roster.size)return roster.size;
+   if(vals.length)return Math.max(...vals);
+
+   // Backward-compatible fallback for older workbook layouts.
+   const legacy=(DB.cols[c].acts||[])
+     .map(a=>a.profile&&a.profile.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   return legacy.length?Math.max(...legacy):null;
  });
  const hasFacultyDenom=facultyDenoms.length>0&&facultyDenoms.every(v=>v!=null);
  const totalFaculty=hasFacultyDenom?facultyDenoms.reduce((a,b)=>a+b,0):null;
@@ -421,32 +506,94 @@ function vO(S){
  const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
  const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
  const K=[
-  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
+  withHoverTip(card('⚙','Programs Accomplished',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs accomplished`),programTipHtml(A)),
   withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
   withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
   withHoverTip(card('◎','SDGs Addressed',sdgCount!=null?`${sdgCount} / 17`:'N/A',sdgCount!=null?ratio(sdgCount,17):null,sdgCount!=null?`${sdgCount} of 17 Sustainable Development Goals addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
   withHoverTip(card('●','Faculty Involved',facultyReported?`${faculty} / ${totalFaculty}`:'N/A',facultyPct,facultyReported?`${pf(facultyPct)} of faculty were involved in extension activities`:'No reported data'),facultyTipHtml(A)),
-  card('◆','Students Involved',students==null?'N/A':students,null,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
-  withHoverTip(card('◉','Beneficiaries Reached',beneReported?bene:'N/A',null,beneReported?`${bene} beneficiaries reached through extension activities`:'No trainee ratings reported for implemented activities'),beneActs.length?`<div class="act-hover-tip project-status-list">${beneActs.map(a=>{const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0);return `<div class="act-tip-item project-status-item ${n>0?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${n>0?'✓ '+n+' Beneficiar'+(n===1?'y':'ies'):'○ No Rating Reported'}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`:''),
+  card('◆','Students Involved',students==null?'N/A':students,students==null?null:100,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
+  withHoverTip(card('◉','Beneficiaries Reached',beneReported?bene:'N/A',beneReported?100:null,beneReported?`${bene} beneficiaries reached through extension activities`:'No trainee ratings reported for implemented activities'),beneActs.length?`<div class="act-hover-tip project-status-list">${beneActs.map(a=>{const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0);return `<div class="act-tip-item project-status-item ${n>0?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${n>0?'✓ '+n+' Beneficiar'+(n===1?'y':'ies'):'○ No Rating Reported'}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`:''),
   withHoverTip(card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),ratingTipHtml(A,'quality')),
   withHoverTip(card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`),ratingTipHtml(A,'timeliness'))
  ];
  return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
 }
 /* ---- SECTION A ---- */
-function vA(S){const I=S.ind,lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
+function autoPiRows(S){
+ /* PI-02/03/04 are calculated from the activity records, not from manually
+    encoded Section A accomplishments. Targets and PI definitions remain from
+    Section A so the official approved targets are preserved. */
+ const I=S.ind.map(i=>({...i})), A=S.acts;
+ const setResult=(i,a,rem,partial=false)=>{
+  if(!i)return;
+  i.a=a;
+  i.v=(a!=null&&i.t!=null)?a-i.t:null;
+  if(a==null)i.st='N/A';
+  else if(i.t!=null&&a>=i.t)i.st='MET';
+  else if(partial)i.st='Partially MET';
+  else i.st='NOT MET';
+  i.rem=rem||'';
+ };
+ const p2=rol(I,/approved extension programs/i), p3=rol(I,/external beneficiaries/i), p4=rol(I,/^Percentage of trainees/i);
+
+ /* Annual PI rule: calculate PI-02/03/04 only from activities whose schedule
+    belongs to the fiscal year currently selected in the dashboard. This keeps
+    prior/future years out of the annual accomplishment and automatically rolls
+    forward when FY 2027, FY 2028, etc. is selected. */
+ const curPeriod=periodsIndex().find(p=>p.key===st.per);
+ const selectedYear=curPeriod&&curPeriod.year?Number(curPeriod.year):EMB_Y;
+ const AY=A.filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===selectedYear});
+
+ /* PI-02: a program is conducted only when every activity scheduled within the
+    selected fiscal year for that approved program is Implemented. */
+ if(p2){
+  const groups=new Map();
+  AY.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(a)});
+  const programs=[...groups.values()], done=programs.filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length;
+  const pending=AY.filter(a=>a.prog!==NOP&&a.s!=='Implemented');
+  let rem='';
+  if(pending.length){
+   rem=`${pending.length} activit${pending.length===1?'y remains':'ies remain'} for implementation in FY ${selectedYear}:\n`+pending.map((a,j)=>`${j+1}. ${a.proj&&a.proj.no!=null?'Project '+a.proj.no+' ':''}Activity ${a.n}`).join('\n');
+  }else if(programs.length){rem=`All planned projects and activities scheduled for FY ${selectedYear} under the approved program(s) were completed/implemented.`}
+  else rem=`No activities scheduled for FY ${selectedYear}.`;
+  setResult(p2,programs.length?done:null,rem,pending.length>0);
+ }
+
+ /* PI-03: each implemented activity's beneficiary count is the number of valid
+    Quality & Relevance evaluation responses (P+F+S+VS+E), for the selected
+    fiscal year only. */
+ if(p3){
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>({a,n:a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0)})).filter(x=>x.n>0);
+  const total=rows.reduce((u,x)=>u+x.n,0);
+  const rem=rows.length?'Breakdown of beneficiaries based on valid trainee ratings per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}-${x.n}`).join('\n'):'No beneficiary evaluation responses reported for implemented activities.';
+  setResult(p3,rows.length?total:null,rem,rows.length>0);
+ }
+
+ /* PI-04: official satisfaction = (S + VS + E) / all valid Quality & Relevance
+    responses. Aggregate the response counts first, then compute one percentage. */
+ if(p4){
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{const x=a.profile.quality.map(v=>Number(v)||0),den=x.reduce((u,v)=>u+v,0),num=x[2]+x[3]+x[4];return{a,den,num,rate:den?num/den*100:null}}).filter(x=>x.den>0);
+  const den=rows.reduce((u,x)=>u+x.den,0), num=rows.reduce((u,x)=>u+x.num,0), rate=den?num/den*100:null;
+  const rem=rows.length?'Trainees rating the training satisfactory or higher per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}-${Math.round(x.rate)}%`).join('\n'):'No Quality & Relevance evaluation responses reported for implemented activities.';
+  setResult(p4,rate,rem,rate!=null);
+ }
+ return I;
+}
+function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
- const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null,K=[p2&&card('⚙','Program Implementation Rate',p2.a==null?'N/A':pf(rr(p2)),rr(p2),`${nv(p2.a)} of ${nv(p2.t)} approved programs conducted`,mktip(`Program Implementation Rate: ${p2.a==null?'N/A':pf(rr(p2))} (${esc(idl(p2))}).`,`${nv(p2.a)} of ${nv(p2.t)} approved programs conducted.`,p2.a==null?'':gapTip(p2.a,p2.t,' program(s)'),'Completing the remaining scheduled activities is what moves a program to conducted.')),
-  p3&&card('●','Beneficiary Achievement Rate',p3.a==null?'N/A':pf(rr(p3)),rr(p3),`${nv(p3.a)} of ${nv(p3.t)} target beneficiaries`,mktip(`Beneficiary Achievement Rate: ${p3.a==null?'N/A':pf(rr(p3))} (${esc(idl(p3))}).`,p3.a==null?'No accomplishment is reported, so the rate cannot be computed.':`${p3.a} of ${p3.t} beneficiaries, weighted by length of training.`,p3.a==null?'Encode the accomplishment to track reach against the target.':gapTip(p3.a,p3.t,' beneficiaries'))),
-  p4&&card('★','Beneficiary Satisfaction Rate',pv(p4,p4.a),rr(p4),`Target: ${pv(p4,p4.t)} | Actual: ${pv(p4,p4.a)}`,mktip(`Beneficiary Satisfaction Rate: ${pv(p4,p4.a)} (target ${pv(p4,p4.t)}).`,p4.a==null?'':`${p4.a-p4.t>=0?'+':''}${+((p4.a-p4.t)*100).toFixed(1)} percentage points versus target.`,p4.a==null?'':(p4.a>=p4.t?'Trainees rate quality and relevance at or above target - keep the current training design.':'Ratings are under target - review trainee feedback and adjust the training.'))),
+ const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null,K=[p2&&card('⚙','Program Implementation Rate',p2.a==null?'N/A':pf(rr(p2)),rr(p2),`${nv(p2.a)} of ${nv(p2.t)} approved programs accomplished`,mktip(`Program Implementation Rate: ${p2.a==null?'N/A':pf(rr(p2))} (${esc(idl(p2))}).`,`${nv(p2.a)} of ${nv(p2.t)} approved programs accomplished.`,p2.a==null?'':gapTip(p2.a,p2.t,' program(s)'),'Automatically calculated from activity implementation status. A program counts as conducted only when all its activities are Implemented.')),
+  p3&&card('●','Beneficiary Achievement Rate',p3.a==null?'N/A':pf(rr(p3)),rr(p3),`${nv(p3.a)} of ${nv(p3.t)} target beneficiaries`,mktip(`Beneficiary Achievement Rate: ${p3.a==null?'N/A':pf(rr(p3))} (${esc(idl(p3))}).`,p3.a==null?'No valid trainee ratings are reported for implemented activities.':`${p3.a} beneficiaries derived automatically from valid Quality & Relevance evaluation responses.`,p3.a==null?'':gapTip(p3.a,p3.t,' beneficiaries'))),
+  p4&&card('★','Beneficiary Satisfaction Rate',pv(p4,p4.a),rr(p4),`Target: ${pv(p4,p4.t)} | Actual: ${pv(p4,p4.a)}`,mktip(`Beneficiary Satisfaction Rate: ${pv(p4,p4.a)} (target ${pv(p4,p4.t)}).`,'Automatically calculated as (S + VS + E) ÷ all valid Quality & Relevance responses.',p4.a==null?'':(p4.a>=p4.t?'Trainees rate quality and relevance at or above target.':'Ratings are under target - review trainee feedback and adjust the training.'))),
   bu&&card('₱','Budget Utilization Rate',pv(bu,bu.a),rr(bu),`Target: ${pv(bu,bu.t)} | Actual: ${pv(bu,bu.a)}`,mktip(`Budget Utilization Rate: ${pv(bu,bu.a)}.`,`Official target ${pv(bu,bu.t)}.`,vsTarget(bu.a,TARGETS.budget),advice(bu.a,TARGETS.budget,'budget'))),
   oth.length&&card('▮','Other Key Performance Indicators',pf(ratio(om.length,oth.length)),ratio(om.length,oth.length),`${om.length} of ${oth.length} indicators met`,mktip(`Other Key Performance Indicators: ${om.length} of ${oth.length} met (${pf(ratio(om.length,oth.length))}).`,oth.filter(i=>i.st!=='MET').length?`Not yet MET: ${oth.filter(i=>i.st!=='MET').map(idl).join(', ')}.`:'All of these indicators are MET.',advice(ratio(om.length,oth.length),100,'indicators')))].filter(Boolean).join('');
- const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${badge(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
- const ins=[`${met.length} of ${I.length} indicators MET; ${gap.length} not yet MET${gap.length?` (${gap.map(i=>esc(idl(i))).join(', ')})`:''}. ${advice(ratio(met.length,I.length),100,'indicators')}`,...gap.map(i=>`${esc(idl(i))} - ${esc(i.st)}: ${pv(i,i.a)} of ${pv(i,i.t)} (variance ${pvar(i)}).`),over.length?`Above target: ${over.map(i=>`${esc(idl(i))} (${pv(i,i.a)} vs ${pv(i,i.t)})`).join('; ')}.`:null,bu?`Budget Utilization Rate indicator: ${pv(bu,bu.a)} vs ${pv(bu,bu.t)} target (${esc(bu.st)}).`:null,I.filter(i=>i.a==null).length?`Accomplishment is blank in the workbook for ${I.filter(i=>i.a==null).map(i=>esc(idl(i))).join(', ')}; shown as N/A.`:null].filter(Boolean);
+ const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
+ const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
+ const ins=[`${met.length} of ${I.length} indicators MET; ${gap.length} not yet MET${gap.length?` (${gap.map(i=>esc(idl(i))).join(', ')})`:''}. ${advice(ratio(met.length,I.length),100,'indicators')}`,...gap.map(i=>`${esc(idl(i))} - ${esc(i.st)}: ${pv(i,i.a)} of ${pv(i,i.t)} (variance ${pvar(i)}).`),over.length?`Above target: ${over.map(i=>`${esc(idl(i))} (${pv(i,i.a)} vs ${pv(i,i.t)})`).join('; ')}.`:null,bu?`Budget Utilization Rate indicator: ${pv(bu,bu.a)} vs ${pv(bu,bu.t)} target (${esc(bu.st)}).`:null,I.filter(i=>i.a==null).length?`Accomplishment is unavailable for ${I.filter(i=>i.a==null).map(i=>esc(idl(i))).join(', ')}; shown as N/A.`:null].filter(Boolean);
  const rem=S.acts.filter(a=>a.s==='For Implementation');
- const nxt=[...gap.map(i=>i.a==null?`Report the accomplishment for ${esc(idl(i))}.`:`Close the ${esc(idl(i))} gap: ${pvar(i)} against the target of ${pv(i,i.t)}.`),rem.length?`Implement the ${rem.length} remaining activities in scope.`:null,met.length?`Sustain the ${met.length} indicators already MET.`:null].filter(Boolean);
+ const nxt=[...gap.map(i=>i.a==null?`Complete the source data needed for ${esc(idl(i))}.`:`Close the ${esc(idl(i))} gap: ${pvar(i)} against the target of ${pv(i,i.t)}.`),rem.length?`Implement the ${rem.length} remaining activities in scope.`:null,met.length?`Sustain the ${met.length} indicators already MET.`:null].filter(Boolean);
  return`${lv==='PROG'?'<div class="nt" style="margin:0 0 6px">Performance indicators are reported at college level in the workbook; the selected program does not have its own indicator set.</div>':''}<div class="k">${K}</div><div class="g2">${P('Performance Indicator Details',lv==='ALL'?'all colleges':fyLabel(),`<div class="tw pidbox"><table><tr><th>ID</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th><th>${lv==='ALL'?'Target per Office':'Remarks'}</th></tr>${rows}</table></div>`,'np')}${P('Target vs. Accomplishment','',TvA(I),'tva')}</div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+
 /* ---- SECTION B ---- */
 function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cmp-m.ot,
  K=withActivityTip(card('◎','Total Extension Activities',n,null,`${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) · ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects<br>${m.ot} implemented as scheduled · ${notOnTime} not implemented on time`,mktip(`Total Extension Activities: ${n}.`,`Spread across ${new Set(S.acts.map(a=>a.col+a.prog)).size} program(s) and ${new Set(S.acts.map(a=>a.col+a.prog+a.proj.key)).size} projects.`,`${m.ot} were implemented exactly in their planned quarter; ${notOnTime} were not (early, late, or overdue).`,notOnTime>0?'Review the not-on-time activities to see whether dates need to be reset or resources added.':'Every due activity followed its original schedule.')),S.acts)+withActivityTip(card('✔','Activities Implemented',`${m.im} / ${n}`,ratio(m.im,n),`${pf(ratio(m.im,n))} completed`,actTip(m)),S.acts.filter(a=>a.s==='Implemented'))+withActivityTip(card('◷','For Implementation',m.fi,ratio(m.fi,n),`${pf(ratio(m.fi,n))} remaining`,mktip(`For Implementation: ${m.fi} activities (${pf(ratio(m.fi,n))} of all activities).`,Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>`${v} more are ${k}.`).join(' '),m.behind.length?`${m.behind.length} already passed their target quarter - these are the priority to implement or reschedule.`:'None has passed its target quarter yet.')),S.acts.filter(a=>a.s==='For Implementation'))
@@ -891,11 +1038,12 @@ render();
     const nativeTip=card.getAttribute('title')||'';
     const drill=card.querySelector('.act-hover-tip');
     const isProjects=/^Projects Completed$/i.test(label.trim());
-    const isPrograms=/^Programs Conducted$/i.test(label.trim());
+    const isPrograms=/^Programs Accomplished$/i.test(label.trim());
     const isActivities=/^Activities Implemented$/i.test(label.trim());
     const isFaculty=/^Faculty Involved$/i.test(label.trim());
     const cardCount=(card.querySelector('.kv')||{}).textContent||'';
-    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:isFaculty?`Faculty Involvement — ${cardCount.trim()} Unique Faculty`:label.trim();
+    const facultyBlocks=isFaculty&&drill?drill.querySelectorAll(':scope > .act-tip-item.project-status-item').length:0;
+    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:isFaculty?`Faculty Involvement — ${facultyBlocks||cardCount.trim()} Unique Faculty`:label.trim();
     body.innerHTML='';
     if(nativeTip && !isProjects && !isFaculty){
       const s=document.createElement('div');
