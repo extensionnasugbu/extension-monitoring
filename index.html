@@ -523,11 +523,11 @@ function vO(S){
 function trainingWeight(v){
  const x=S1(v).toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ').trim();
  if(!x)return null;
- if(/^<\s*8\s*hours?$/.test(x)||/less than\s*8\s*hours?/.test(x))return .50;
- if(/^8\s*hours?\s*\(one day\)$/.test(x)||(/^8\s*hours?$/.test(x))||/one day/.test(x))return 1.00;
- if(/^2\s*days?$/.test(x))return 1.25;
- if(/^3\s*-\s*4\s*days?$/.test(x))return 1.50;
- if(/^5\s*days?\s*or\s*more$/.test(x)||/5\s*days?\s*or\s*more/.test(x))return 2.00;
+ if(x.includes('< 8 hour')||x.includes('<8 hour')||x.includes('less than 8 hour'))return .50;
+ if(x.includes('8 hours (one day)')||x==='8 hours'||x==='8 hour'||x==='one day')return 1.00;
+ if(x==='2 days'||x==='2 day')return 1.25;
+ if(x==='3-4 days'||x==='3 - 4 days'||x==='3-4 day'||x==='3 - 4 day')return 1.50;
+ if(x.includes('5 days or more')||x.includes('5 day or more'))return 2.00;
  return null;
 }
 function trainingWeightLabel(v){const w=trainingWeight(v);return w==null?'No valid length of training':`${S1(v)} × ${w.toFixed(2)}`}
@@ -581,7 +581,7 @@ function autoPiRows(S){
     return {a,n,len,w,result:w==null?null:n*w};
   }).filter(x=>x.n>0);
   const valid=rows.filter(x=>x.w!=null), total=valid.reduce((u,x)=>u+x.result,0), missing=rows.filter(x=>x.w==null);
-  let rem=rows.length?'Weighted beneficiary computation per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.n} × ${x.w==null?'[Length of Training not set]':x.w.toFixed(2)+' ('+x.len+') = '+Number(x.result.toFixed(2))}`).join('\n'):'No beneficiary evaluation responses reported for implemented activities.';
+  let rem=rows.length?'Weighted beneficiary computation per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.n} persons × ${x.w==null?'[Length of Training not set]':x.w.toFixed(2)+' weight ('+x.len+') = '+Number(x.result.toFixed(2))}`).join('\n')+(valid.length?`\n\nTOTAL WEIGHTED BENEFICIARIES = ${Number(total.toFixed(2))}`:''):'No beneficiary evaluation responses reported for implemented activities.';
   if(missing.length)rem+=`\n\n${missing.length} activit${missing.length===1?'y is':'ies are'} excluded until Length of Training is selected.`;
   setResult(p3,valid.length?Number(total.toFixed(2)):null,rem,valid.length>0);
  }
