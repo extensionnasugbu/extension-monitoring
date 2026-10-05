@@ -506,7 +506,7 @@ function vO(S){
  const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
  const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
  const K=[
-  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
+  withHoverTip(card('⚙','Programs Accomplished',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs accomplished`),programTipHtml(A)),
   withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
   withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
@@ -582,17 +582,28 @@ function autoPiRows(S){
 }
 function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
- const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null,K=[p2&&card('⚙','Program Implementation Rate',p2.a==null?'N/A':pf(rr(p2)),rr(p2),`${nv(p2.a)} of ${nv(p2.t)} approved programs conducted`,mktip(`Program Implementation Rate: ${p2.a==null?'N/A':pf(rr(p2))} (${esc(idl(p2))}).`,`${nv(p2.a)} of ${nv(p2.t)} approved programs conducted.`,p2.a==null?'':gapTip(p2.a,p2.t,' program(s)'),'Automatically calculated from activity implementation status. A program counts as conducted only when all its activities are Implemented.')),
-  p3&&card('●','Beneficiary Achievement Rate',p3.a==null?'N/A':pf(rr(p3)),rr(p3),`${nv(p3.a)} of ${nv(p3.t)} target beneficiaries`,mktip(`Beneficiary Achievement Rate: ${p3.a==null?'N/A':pf(rr(p3))} (${esc(idl(p3))}).`,p3.a==null?'No valid trainee ratings are reported for implemented activities.':`${p3.a} beneficiaries derived automatically from valid Quality & Relevance evaluation responses.`,p3.a==null?'':gapTip(p3.a,p3.t,' beneficiaries'))),
-  p4&&card('★','Beneficiary Satisfaction Rate',pv(p4,p4.a),rr(p4),`Target: ${pv(p4,p4.t)} | Actual: ${pv(p4,p4.a)}`,mktip(`Beneficiary Satisfaction Rate: ${pv(p4,p4.a)} (target ${pv(p4,p4.t)}).`,'Automatically calculated as (S + VS + E) ÷ all valid Quality & Relevance responses.',p4.a==null?'':(p4.a>=p4.t?'Trainees rate quality and relevance at or above target.':'Ratings are under target - review trainee feedback and adjust the training.'))),
-  bu&&card('₱','Budget Utilization Rate',pv(bu,bu.a),rr(bu),`Target: ${pv(bu,bu.t)} | Actual: ${pv(bu,bu.a)}`,mktip(`Budget Utilization Rate: ${pv(bu,bu.a)}.`,`Official target ${pv(bu,bu.t)}.`,vsTarget(bu.a,TARGETS.budget),advice(bu.a,TARGETS.budget,'budget'))),
-  oth.length&&card('▮','Other Key Performance Indicators',pf(ratio(om.length,oth.length)),ratio(om.length,oth.length),`${om.length} of ${oth.length} indicators met`,mktip(`Other Key Performance Indicators: ${om.length} of ${oth.length} met (${pf(ratio(om.length,oth.length))}).`,oth.filter(i=>i.st!=='MET').length?`Not yet MET: ${oth.filter(i=>i.st!=='MET').map(idl).join(', ')}.`:'All of these indicators are MET.',advice(ratio(om.length,oth.length),100,'indicators')))].filter(Boolean).join('');
+ const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null;
+ const piTip=i=>`<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div>${i.rem?`<div style="margin-top:6px"><b>Details</b><br>${remL(i.rem)}</div>`:''}</div></div>`;
+ const allPiTip=()=>`<div class="act-hover-tip project-status-list">${I.map(i=>`<div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)}</div></div>`).join('')}</div>`;
+ const pick=(...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
+ const featured=[
+  pick(/faculty members who took the Basic and Advanced Course/i),
+  pick(/external beneficiaries/i),
+  pick(/social innovation projects utilized by the community/i),
+  pick(/faculty members monitored who have completed and implemented the course/i),
+  pick(/conducted technical advisory for industries and other institutions/i)
+ ].filter((x,j,a)=>x&&a.indexOf(x)===j);
+ const excluded=new Set(featured); const fillers=I.filter(i=>!excluded.has(i)&&!/^Percentage of trainees/i.test(i.pi)&&!/Budget Utilization Rate/i.test(i.pi)&&!/approved extension programs/i.test(i.pi)&&!/Memorandum of Understanding|Memorandum of Agreement/i.test(i.pi));
+ while(featured.length<5&&fillers.length)featured.push(fillers.shift());
+ const K0=withHoverTip(card('●','Performance Indicators MET',`${met.length} / ${I.length}`,ratio(met.length,I.length),`${pf(ratio(met.length,I.length))} achieved`),allPiTip());
+ const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),piTip(i))}).join('');
+ const K=K0+K1;
  const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
  const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
  const ins=[`${met.length} of ${I.length} indicators MET; ${gap.length} not yet MET${gap.length?` (${gap.map(i=>esc(idl(i))).join(', ')})`:''}. ${advice(ratio(met.length,I.length),100,'indicators')}`,...gap.map(i=>`${esc(idl(i))} - ${esc(i.st)}: ${pv(i,i.a)} of ${pv(i,i.t)} (variance ${pvar(i)}).`),over.length?`Above target: ${over.map(i=>`${esc(idl(i))} (${pv(i,i.a)} vs ${pv(i,i.t)})`).join('; ')}.`:null,bu?`Budget Utilization Rate indicator: ${pv(bu,bu.a)} vs ${pv(bu,bu.t)} target (${esc(bu.st)}).`:null,I.filter(i=>i.a==null).length?`Accomplishment is unavailable for ${I.filter(i=>i.a==null).map(i=>esc(idl(i))).join(', ')}; shown as N/A.`:null].filter(Boolean);
  const rem=S.acts.filter(a=>a.s==='For Implementation');
  const nxt=[...gap.map(i=>i.a==null?`Complete the source data needed for ${esc(idl(i))}.`:`Close the ${esc(idl(i))} gap: ${pvar(i)} against the target of ${pv(i,i.t)}.`),rem.length?`Implement the ${rem.length} remaining activities in scope.`:null,met.length?`Sustain the ${met.length} indicators already MET.`:null].filter(Boolean);
- return`${lv==='PROG'?'<div class="nt" style="margin:0 0 6px">Performance indicators are reported at college level in the workbook; the selected program does not have its own indicator set.</div>':''}<div class="k">${K}</div><div class="g2">${P('Performance Indicator Details',lv==='ALL'?'all colleges':fyLabel(),`<div class="tw pidbox"><table><tr><th>ID</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th><th>${lv==='ALL'?'Target per Office':'Remarks'}</th></tr>${rows}</table></div>`,'np')}${P('Target vs. Accomplishment','',TvA(I),'tva')}</div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+ return`${lv==='PROG'?'<div class="nt" style="margin:0 0 6px">Performance indicators are reported at college level in the workbook; the selected program does not have its own indicator set.</div>':''}<div class="k" style="grid-template-columns:repeat(3,1fr)">${K}</div><div class="g2">${P('Performance Indicator Details',lv==='ALL'?'all colleges':fyLabel(),`<div class="tw pidbox"><table><tr><th>ID</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th><th>${lv==='ALL'?'Target per Office':'Remarks'}</th></tr>${rows}</table></div>`,'np')}${P('Target vs. Accomplishment','',TvA(I),'tva')}</div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
 
 /* ---- SECTION B ---- */
 function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cmp-m.ot,
@@ -1038,7 +1049,7 @@ render();
     const nativeTip=card.getAttribute('title')||'';
     const drill=card.querySelector('.act-hover-tip');
     const isProjects=/^Projects Completed$/i.test(label.trim());
-    const isPrograms=/^Programs Conducted$/i.test(label.trim());
+    const isPrograms=/^Programs Accomplished$/i.test(label.trim());
     const isActivities=/^Activities Implemented$/i.test(label.trim());
     const isFaculty=/^Faculty Involved$/i.test(label.trim());
     const cardCount=(card.querySelector('.kv')||{}).textContent||'';
