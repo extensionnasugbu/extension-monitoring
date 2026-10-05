@@ -426,7 +426,26 @@ function vO(S){
  const partnershipTarget=indTarget(I,/partnership/i,/MOU/i,/MOA/i);
  const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
  const pt=profileTotals(A);
- const facultyPeople=facultyStats(A);
+ /* Faculty numerator: count DISTINCT names from the selected college's Activity
+    Profile list. Do not count a faculty member more than once even when the same
+    person appears in several activities. For a specific program, keep the current
+    scoped activity logic so the numerator reflects that program only. */
+ const facultyPeople=(S.level==='PROG')
+   ? facultyStats(A)
+   : (()=> {
+       const people=new Map();
+       S.cs.forEach(c=>{
+         (DB.cols[c].erows||[]).forEach(r=>{
+           if(!r||!r.facultyNames)return;
+           facultyNameList(r.facultyNames).forEach(name=>{
+             const k=c+'|'+facultyKey(name); // college-qualified distinct key
+             if(!facultyKey(name))return;
+             if(!people.has(k))people.set(k,{name:S1(name)});
+           });
+         });
+       });
+       return [...people.values()];
+     })();
  const faculty=facultyPeople.length?facultyPeople.length:null;
  /* Faculty participation must be based only on explicitly reported faculty names and
     the explicitly reported "Number of Faculty in the College". Never infer or
@@ -440,6 +459,18 @@ function vO(S){
      .map(r=>r&&r.totalFaculty)
      .filter(v=>v!=null&&Number(v)>0)
      .map(Number);
+   /* Build the college denominator from the complete faculty-name list itself.
+      This is the authoritative roster requested for the dashboard (e.g. 14 CICS
+      faculty). */
+   const roster=new Set();
+   (DB.cols[c].erows||[]).forEach(r=>{
+     if(!r||!r.facultyNames)return;
+     facultyNameList(r.facultyNames).forEach(name=>{
+       const k=facultyKey(name);
+       if(k)roster.add(k);
+     });
+   });
+   if(roster.size)return roster.size;
    if(vals.length)return Math.max(...vals);
 
    // Backward-compatible fallback for older workbook layouts.
