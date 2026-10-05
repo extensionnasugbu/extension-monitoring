@@ -572,11 +572,11 @@ function autoPiRows(S){
   setResult(p2,programs.length?done:null,rem,pending.length>0);
  }
 
- /* PI-03: weighted external beneficiaries. The actual beneficiary count remains
-    the valid Quality & Relevance response total per implemented activity. PI-03
-    multiplies that actual count by the official Length of Training weight. */
+ /* PI-03: weighted external beneficiaries. For every activity in the selected fiscal year,
+    beneficiary count is P+F+S+VS+E from Quality & Relevance. Activities with zero/blank
+    ratings contribute 0; rated activities are multiplied by the Length of Training weight. */
  if(p3){
-  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{
+  const rows=AY.filter(a=>a.profile&&Array.isArray(a.profile.quality)).map(a=>{
     const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0), len=a.profile.trainingLength||'', w=trainingWeight(len);
     return {a,n,len,w,result:w==null?null:n*w};
   }).filter(x=>x.n>0);
