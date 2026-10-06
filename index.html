@@ -203,7 +203,7 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),trainingLength:S1(r[19]),totalFaculty:num(r[20])})});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19]),trainingLength:S1(r[20]),weightedTrainees:num(r[21])})});
  /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
@@ -213,7 +213,7 @@ function parseSheet(rows,sheet){
      if(/^Prepared by/i.test(sa))break;
      if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
      if(num(a)==null||!S1(b))continue;
-     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),trainingLength:S1(r[19]),totalFaculty:num(r[20])});
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19]),trainingLength:S1(r[20]),weightedTrainees:num(r[21])});
    }
    if(clean.length)R.erows=clean;
  }
@@ -519,18 +519,6 @@ function vO(S){
  ];
  return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
 }
-/* Training-length weighting used by PI-03. Values correspond to the official dropdown labels in the Activity Profile. */
-function trainingWeight(v){
- const x=S1(v).toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ').trim();
- if(!x)return null;
- if(x.includes('< 8 hour')||x.includes('<8 hour')||x.includes('less than 8 hour'))return .50;
- if(x.includes('8 hours (one day)')||x==='8 hours'||x==='8 hour'||x==='one day')return 1.00;
- if(x==='2 days'||x==='2 day')return 1.25;
- if(x==='3-4 days'||x==='3 - 4 days'||x==='3-4 day'||x==='3 - 4 day')return 1.50;
- if(x.includes('5 days or more')||x.includes('5 day or more'))return 2.00;
- return null;
-}
-function trainingWeightLabel(v){const w=trainingWeight(v);return w==null?'No valid length of training':`${S1(v)} × ${w.toFixed(2)}`}
 /* ---- SECTION A ---- */
 function autoPiRows(S){
  /* PI-02/03/04 are calculated from the activity records, not from manually
@@ -572,18 +560,15 @@ function autoPiRows(S){
   setResult(p2,programs.length?done:null,rem,pending.length>0);
  }
 
- /* PI-03: weighted external beneficiaries. For every activity in the selected fiscal year,
-    beneficiary count is P+F+S+VS+E from Quality & Relevance. Activities with zero/blank
-    ratings contribute 0; rated activities are multiplied by the Length of Training weight. */
+ /* PI-03: use the official activity-level "Number of Trainees weighted by the
+    length of training" from the Activity Profile (Column U). Only implemented
+    activities scheduled in the selected fiscal year are included. */
  if(p3){
-  const rows=AY.filter(a=>a.profile&&Array.isArray(a.profile.quality)).map(a=>{
-    const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0), len=a.profile.trainingLength||'', w=trainingWeight(len);
-    return {a,n,len,w,result:w==null?null:n*w};
-  }).filter(x=>x.n>0);
-  const valid=rows.filter(x=>x.w!=null), total=valid.reduce((u,x)=>u+x.result,0), missing=rows.filter(x=>x.w==null);
-  let rem=rows.length?'Weighted beneficiary computation per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.n} persons × ${x.w==null?'[Length of Training not set]':x.w.toFixed(2)+' weight ('+x.len+') = '+Number(x.result.toFixed(2))}`).join('\n')+(valid.length?`\n\nTOTAL WEIGHTED BENEFICIARIES = ${Number(total.toFixed(2))}`:''):'No beneficiary evaluation responses reported for implemented activities.';
-  if(missing.length)rem+=`\n\n${missing.length} activit${missing.length===1?'y is':'ies are'} excluded until Length of Training is selected.`;
-  setResult(p3,valid.length?Number(total.toFixed(2)):null,rem,valid.length>0);
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&a.profile.weightedTrainees!=null)
+    .map(a=>({a,n:Number(a.profile.weightedTrainees)})).filter(x=>Number.isFinite(x.n));
+  const total=rows.reduce((u,x)=>u+x.n,0);
+  const rem=rows.length?'Breakdown of trainees weighted by the length of training per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n} - ${+x.n.toFixed(2)}`).join('\n'):'No weighted trainee data reported for implemented activities.';
+  setResult(p3,rows.length?+total.toFixed(2):null,rem,rows.length>0);
  }
 
  /* PI-04: official satisfaction = (S + VS + E) / all valid Quality & Relevance
@@ -600,6 +585,7 @@ function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),ga
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
  const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null;
  const piTip=i=>`<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div>${i.rem?`<div style="margin-top:6px"><b>Details</b><br>${remL(i.rem)}</div>`:''}</div></div>`;
+ const weightedPiTip=i=>{const cur=periodsIndex().find(p=>p.key===st.per),yr=cur&&cur.year?Number(cur.year):EMB_Y;const acts=S.acts.filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===yr});const rows=acts.map(a=>{const p=a.profile||{},rated=Array.isArray(p.quality)?p.quality.reduce((u,v)=>u+(Number(v)||0),0):0,w=p.weightedTrainees!=null?Number(p.weightedTrainees):null,ok=a.s==='Implemented'&&Number.isFinite(w);return{a,p,rated,w,ok}});return `<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)} — Total Weighted Trainees: ${pv(i,i.a)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div></div>${rows.map(x=>`<div class="act-tip-item project-status-item ${x.ok?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.ok?'✓ Included — Weighted Trainees: '+(+x.w.toFixed(2)):'○ '+(x.a.s==='Implemented'?'No Weighted Trainee Data':esc(x.a.s||'For Implementation'))}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Trainees who rated</b> ${x.rated||0}</div><div><b>Length of Training</b> ${esc(x.p.trainingLength||'—')}</div><div><b>Weighted Trainees</b> ${Number.isFinite(x.w)?+x.w.toFixed(2):'—'}</div></div>`).join('')}</div>`};
  const allPiTip=()=>`<div class="act-hover-tip project-status-list">${I.map(i=>`<div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)}</div></div>`).join('')}</div>`;
  const pick=(...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
  const featured=[
@@ -612,7 +598,7 @@ function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),ga
  const excluded=new Set(featured); const fillers=I.filter(i=>!excluded.has(i)&&!/^Percentage of trainees/i.test(i.pi)&&!/Budget Utilization Rate/i.test(i.pi)&&!/approved extension programs/i.test(i.pi)&&!/Memorandum of Understanding|Memorandum of Agreement/i.test(i.pi));
  while(featured.length<5&&fillers.length)featured.push(fillers.shift());
  const K0=withHoverTip(card('●','Performance Indicators MET',`${met.length} / ${I.length}`,ratio(met.length,I.length),`${pf(ratio(met.length,I.length))} achieved`),allPiTip());
- const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),piTip(i))}).join('');
+ const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),i===p3?weightedPiTip(i):piTip(i))}).join('');
  const K=K0+K1;
  const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
  const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
@@ -1011,31 +997,6 @@ render();
       if(!res.ok)throw new Error(`HTTP ${res.status}`);
       const payload=await res.json();
       if(!payload.success)throw new Error(payload.error||'Apps Script returned success:false');
-
-      /* The Activity Profile was extended with column T = Length of Training.
-         Some older Apps Script deployments return only the earlier column range,
-         which leaves PI-03 using stale/missing training lengths. Refresh each
-         annual REF sheet directly from the Google Sheet when possible so column T
-         is always included. If Google blocks the direct request, the Apps Script
-         payload remains the fallback. */
-      const GOOGLE_SHEET_ID='1D6ONgf1bokRpdMTFzLdK02AB8NbLvVYNpmGvq5hqGo';
-      async function refreshRefSheetsWithFullRange(pl){
-        const names=Object.keys(pl.sheets||{}).filter(n=>/^REF_.*_20\d{2}$/i.test(n));
-        await Promise.all(names.map(async name=>{
-          try{
-            const url=`https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(name)}&_=${Date.now()}`;
-            const rr=await fetch(url,{cache:'no-store',credentials:'omit'});
-            if(!rr.ok)return;
-            const txt=await rr.text(); if(!txt||/^<!doctype html/i.test(txt.trim()))return;
-            const wb=XLSX.read(txt,{type:'string',raw:true});
-            const ws=wb.Sheets[wb.SheetNames[0]]; if(!ws)return;
-            const full=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:null});
-            if(full.length)pl.sheets[name]=full;
-          }catch(e){console.warn('Direct full-range refresh failed for',name,e)}
-        }));
-        return pl;
-      }
-      await refreshRefSheetsWithFullRange(payload);
       livePayload=payload; const maps=yearMaps(payload); liveYears=Object.keys(maps).map(Number).sort((a,b)=>a-b);
       if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
       const current=+document.getElementById('yr').value;
