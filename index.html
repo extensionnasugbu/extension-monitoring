@@ -536,7 +536,7 @@ function vO(S){
  const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
  const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
  const K=[
-  withHoverTip(card('⚙','Programs Accomplished',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs accomplished`),programTipHtml(A)),
+  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
   withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
   withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
   withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
@@ -1083,7 +1083,7 @@ render();
     const nativeTip=card.getAttribute('title')||'';
     const drill=card.querySelector('.act-hover-tip');
     const isProjects=/^Projects Completed$/i.test(label.trim());
-    const isPrograms=/^Programs Accomplished$/i.test(label.trim());
+    const isPrograms=/^Programs Conducted$/i.test(label.trim());
     const isActivities=/^Activities Implemented$/i.test(label.trim());
     const isFaculty=/^Faculty Involved$/i.test(label.trim());
     const cardCount=(card.querySelector('.kv')||{}).textContent||'';
