@@ -203,7 +203,7 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19]),trainingLength:S1(r[20]),weightedTrainees:num(r[20])})});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),trainingLength:S1(r[19]),weightedReported:num(r[20])})});
  /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
@@ -213,7 +213,7 @@ function parseSheet(rows,sheet){
      if(/^Prepared by/i.test(sa))break;
      if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
      if(num(a)==null||!S1(b))continue;
-     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),totalFaculty:num(r[19]),trainingLength:S1(r[20]),weightedTrainees:num(r[20])});
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),trainingLength:S1(r[19]),weightedReported:num(r[20])});
    }
    if(clean.length)R.erows=clean;
  }
@@ -560,15 +560,16 @@ function autoPiRows(S){
   setResult(p2,programs.length?done:null,rem,pending.length>0);
  }
 
- /* PI-03: use the official activity-level "Number of Trainees weighted by the
-    length of training" from the Activity Profile (Column U). Only implemented
-    activities scheduled in the selected fiscal year are included. */
+ /* PI-03: external beneficiaries weighted by length of training.
+    Trainees = valid Quality & Relevance responses (P+F+S+VS+E).
+    Official weights: <8h=.5; 8h/one day=1; 2 days=1.25; 3-4 days=1.5; 5+ days=2. */
  if(p3){
-  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&a.profile.weightedTrainees!=null)
-    .map(a=>({a,n:Number(a.profile.weightedTrainees)})).filter(x=>Number.isFinite(x.n));
-  const total=rows.reduce((u,x)=>u+x.n,0);
-  const rem=rows.length?'Breakdown of trainees weighted by the length of training per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n} - ${+x.n.toFixed(2)}`).join('\n'):'No weighted trainee data reported for implemented activities.';
-  setResult(p3,rows.length?+total.toFixed(2):null,rem,rows.length>0);
+  const trainingWeight=v=>{const s=String(v||'').trim().toLowerCase().replace(/[–—]/g,'-');if(!s)return null;if(/5\s*days?\s*or\s*more|5\+\s*days?/.test(s))return 2;if(/3\s*-\s*4\s*days?/.test(s))return 1.5;if(/^2\s*days?$/.test(s)||/\b2\s*days?\b/.test(s))return 1.25;if(/8\s*hours?|one\s*day|1\s*day/.test(s))return 1;if(/<\s*8\s*hours?|less\s*than\s*8\s*hours?/.test(s))return .5;return null};
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{const trainees=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0),length=a.profile.trainingLength||'',weight=trainingWeight(length),weighted=trainees>0&&weight!=null?trainees*weight:null;return{a,trainees,length,weight,weighted}}).filter(x=>x.trainees>0);
+  const valid=rows.filter(x=>x.weighted!=null), total=valid.reduce((u,x)=>u+x.weighted,0);
+  const fmt=n=>Number.isInteger(n)?String(n):Number(n.toFixed(2)).toString();
+  const rem=rows.length?'Weighted trainee breakdown per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.trainees} trainees × ${x.weight==null?'N/A':x.weight} (${x.length||'Length not reported'}) = ${x.weighted==null?'N/A':fmt(x.weighted)}`).join('\n'):'No beneficiary evaluation responses reported for implemented activities.';
+  setResult(p3,valid.length?total:null,rem,valid.length>0);
  }
 
  /* PI-04: official satisfaction = (S + VS + E) / all valid Quality & Relevance
@@ -585,7 +586,6 @@ function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),ga
  const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
  const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null;
  const piTip=i=>`<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div>${i.rem?`<div style="margin-top:6px"><b>Details</b><br>${remL(i.rem)}</div>`:''}</div></div>`;
- const weightedPiTip=i=>{const cur=periodsIndex().find(p=>p.key===st.per),yr=cur&&cur.year?Number(cur.year):EMB_Y;const acts=S.acts.filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===yr});const rows=acts.map(a=>{const p=a.profile||{},rated=Array.isArray(p.quality)?p.quality.reduce((u,v)=>u+(Number(v)||0),0):0,w=p.weightedTrainees!=null?Number(p.weightedTrainees):null,ok=a.s==='Implemented'&&Number.isFinite(w);return{a,p,rated,w,ok}});return `<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)} — Total Weighted Trainees: ${pv(i,i.a)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div></div>${rows.map(x=>`<div class="act-tip-item project-status-item ${x.ok?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.ok?'✓ Included — Weighted Trainees: '+(+x.w.toFixed(2)):'○ '+(x.a.s==='Implemented'?'No Weighted Trainee Data':esc(x.a.s||'For Implementation'))}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Trainees who rated</b> ${x.rated||0}</div><div><b>Weighted Trainees</b> ${Number.isFinite(x.w)?+x.w.toFixed(2):'—'}</div></div>`).join('')}</div>`};
  const allPiTip=()=>`<div class="act-hover-tip project-status-list">${I.map(i=>`<div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)}</div></div>`).join('')}</div>`;
  const pick=(...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
  const featured=[
@@ -598,7 +598,7 @@ function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),ga
  const excluded=new Set(featured); const fillers=I.filter(i=>!excluded.has(i)&&!/^Percentage of trainees/i.test(i.pi)&&!/Budget Utilization Rate/i.test(i.pi)&&!/approved extension programs/i.test(i.pi)&&!/Memorandum of Understanding|Memorandum of Agreement/i.test(i.pi));
  while(featured.length<5&&fillers.length)featured.push(fillers.shift());
  const K0=withHoverTip(card('●','Performance Indicators MET',`${met.length} / ${I.length}`,ratio(met.length,I.length),`${pf(ratio(met.length,I.length))} achieved`),allPiTip());
- const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),i===p3?weightedPiTip(i):piTip(i))}).join('');
+ const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),piTip(i))}).join('');
  const K=K0+K1;
  const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
  const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
