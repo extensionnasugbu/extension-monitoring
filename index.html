@@ -203,7 +203,7 @@ function parseSheet(rows,sheet){
   else if(num(a)==null)return;
   else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
   else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
-  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedTrainees:num(r[20]),totalFaculty:null})});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedReported:num(r[20]),totalFaculty:null})});
  /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
  const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
  if(eHeader>=0){
@@ -213,7 +213,7 @@ function parseSheet(rows,sheet){
      if(/^Prepared by/i.test(sa))break;
      if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
      if(num(a)==null||!S1(b))continue;
-     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedTrainees:num(r[20]),totalFaculty:null});
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedReported:num(r[20]),totalFaculty:null});
    }
    if(clean.length)R.erows=clean;
  }
@@ -303,6 +303,36 @@ const programTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(a.prog===
 const projectTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!groups.has(k))groups.set(k,{pr,pj,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Completed':'○ Not Yet Completed'}</span></div><div><b>Program</b> ${esc(x.pr)}</div><div><b>Project</b> ${esc(x.pj)}</div></div>`).join('')}</div>`:''};
 const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip project-status-list">${A.map(a=>{const done=a.s==='Implemented';return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ Implemented':'○ '+esc(a.s||'Not Yet Implemented')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`};
 const ratingTipHtml=(A,kind)=>{const key=kind==='quality'?'quality':'timeliness',label=kind==='quality'?'Quality':'Timeliness';const rows=(A||[]).map(a=>{const x=a.profile&&Array.isArray(a.profile[key])?a.profile[key]:[];const den=x.reduce((u,v)=>u+(Number(v)||0),0),num=(Number(x[2])||0)+(Number(x[3])||0)+(Number(x[4])||0),rate=den?num/den*100:null;const implemented=a.s==='Implemented';const status=den>0?'Rated':(implemented?'No Rating Reported':'For Implementation');return {a,x,den,rate,status}});return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>{const rated=x.status==='Rated',implemented=x.a.s==='Implemented';return `<div class="act-tip-item project-status-item ${rated?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${rated?'✓ Rated — '+label+': '+pf(x.rate):'○ '+x.status}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div>${rated?`<div><b>Rating breakdown</b> P: ${x.x[0]||0} · F: ${x.x[1]||0} · S: ${x.x[2]||0} · VS: ${x.x[3]||0} · E: ${x.x[4]||0}</div>`:(implemented?'<div><b>Rating</b> Evaluation data not reported.</div>':'')}</div>`}).join('')}</div>`:''};
+
+/* PI-03 weighted beneficiary calculation: Quality & Relevance respondents × training-length weight. */
+function trainingWeight(v){
+ const x=S1(v).toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ').trim();
+ if(!x)return null;
+ if(/^<\s*8\s*hours?/.test(x)||/less than\s*8\s*hours?/.test(x))return 0.5;
+ if(/^8\s*hours?\s*\(\s*one day\s*\)/.test(x)||/^8\s*hours?$/.test(x)||/^1\s*day$/.test(x)||/^one day$/.test(x))return 1;
+ if(/^2\s*days?/.test(x))return 1.25;
+ if(/^(?:3\s*-\s*4|3\s*to\s*4)\s*days?/.test(x))return 1.5;
+ if(/^5\s*days?\s*(?:or|and)\s*more/.test(x)||/^5\+\s*days?/.test(x)||/at least\s*5\s*days?/.test(x))return 2;
+ return null;
+}
+const fmtWeighted=n=>n==null?'N/A':Number.isInteger(+n)?String(+n):(+n).toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+function weightedBeneficiaryRows(A){
+ return (A||[]).map(a=>{
+  const q=a.profile&&Array.isArray(a.profile.quality)?a.profile.quality.map(v=>Number(v)||0):[];
+  const trainees=q.length?q.reduce((u,v)=>u+v,0):0;
+  const length=a.profile?S1(a.profile.lengthTraining):'';
+  const weight=trainingWeight(length);
+  const eligible=a.s==='Implemented'&&trainees>0&&weight!=null;
+  return {a,q,trainees,length,weight,weighted:eligible?trainees*weight:null,eligible};
+ });
+}
+function weightedBeneficiaryTipHtml(A){
+ const cur=periodsIndex().find(p=>p.key===st.per),year=cur&&cur.year?Number(cur.year):EMB_Y;
+ const FY=(A||[]).filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===year});
+ const rows=weightedBeneficiaryRows(FY);if(!rows.length)return '';
+ const total=rows.reduce((u,x)=>u+(x.weighted||0),0);
+ return `<div class="act-hover-tip project-status-list">${rows.map(x=>{const implemented=x.a.s==='Implemented';let status='For Implementation';if(implemented&&!x.trainees)status='No Rating Reported';else if(implemented&&x.trainees&&x.weight==null)status='Length of Training Missing / Unrecognized';else if(x.eligible)status='Weighted: '+fmtWeighted(x.weighted);return `<div class="act-tip-item project-status-item ${x.eligible?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.eligible?'✓ ':'○ '}${esc(status)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div>${implemented?`<div><b>Quality rating breakdown</b> P: ${x.q[0]||0} · F: ${x.q[1]||0} · S: ${x.q[2]||0} · VS: ${x.q[3]||0} · E: ${x.q[4]||0}</div><div><b>Trainees rated</b> ${x.trainees}</div><div><b>Length of Training</b> ${esc(x.length||'Not reported')}</div><div><b>Weight</b> ${x.weight==null?'N/A':x.weight}</div>${x.eligible?`<div><b>Computation</b> ${x.trainees} × ${x.weight} = <b>${fmtWeighted(x.weighted)}</b></div>`:''}`:''}</div>`}).join('')}<div class="act-tip-item project-status-item is-complete"><div><b>Total Weighted Trainees</b> ${fmtWeighted(total)}</div><div class="nt">Formula: trainees who rated Quality & Relevance × weight based on Length of Training.</div></div></div>`;
+}
 const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';const raw=String(row.rem||'').replace(/\r/g,'').trim();const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);let vals=lines.filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim());if(!vals.length){vals=raw.split(/;|\|/).map(x=>x.trim()).filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim())}if(!vals.length){vals=lines.filter(x=>!/(?:\b(?:one|two|three|four|five|six|seven|eight|nine|ten)\b\s*\(\d+\)|\b\d+\s*\([^)]*\))[^\n]*(?:MOA|MOU|partnership|target|established)/i.test(x)&&!/(?:target|accomplishment)\s*[:=-]/i.test(x))}const actual=Math.max(0,Math.round(Number(row.a)||0));const classify=(x,i)=>{if(/\b(established|signed|notarized|executed|completed)\b/i.test(x))return 'Established';if(/for\s*sign(?:ing|ature)?|await(?:ing)?\s*sign(?:ing|ature)?|awaiting\s*signature/i.test(x))return 'For Signing';if(/for\s*review\s*\(\s*(?:institution(?:'|’)?s?\s*)?legal\s*\)|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|(?:institution(?:'|’)?s?\s*)?legal\s*(?:office|counsel)?\s*(?:review|evaluation)|review\s*(?:by|of)\s*(?:the\s*)?(?:institution(?:'|’)?s?\s*)?legal/i.test(x))return "For Review (Institution’s Legal)";if(/for\s*review\s*\(\s*(?:partner|partner\s*agency|agency)\s*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|review\s*(?:by|of)\s*(?:the\s*)?(?:partner|partner\s*agency|agency|counterpart)|partner(?:\s*agency)?\s*(?:review|evaluation)/i.test(x))return 'For Review (Partner Agency)';if(/exploratory|exploration|initial\s*(?:discussion|coordination|meeting)|potential\s*partnership|prospective\s*partner/i.test(x))return 'For Exploratory Meeting';return i<actual?'Established':'For Exploratory Meeting'};return vals.length?`<div class="act-hover-tip project-status-list">${vals.map((x,i)=>{const status=classify(x);const done=status==='Established';let agency=x.replace(/\s*\((?:established|signed|notarized|executed|completed|for\s*sign(?:ing|ature)?|for\s*review\s*\([^)]*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|for\s*exploratory(?:\s*meeting)?)\)\s*$/i,'').replace(/\s*[-–—:]\s*(?:Established|For\s*Signing|For\s*Review\s*\([^)]*\)|For\s*Exploratory\s*Meeting)\s*$/i,'').trim();return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${status}</span></div><div><b>Partnership</b> ${esc(agency)}</div></div>`}).join('')}</div>`:''};
 const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
 const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
@@ -408,34 +438,6 @@ function facultyTipHtml(A){
  const f=facultyStats(A);if(!f.length)return '<div class="act-hover-tip"><div class="nt">No faculty names reported in the current scope.</div></div>';
  return `<div class="act-hover-tip project-status-list">${f.map(x=>`<div class="act-tip-item project-status-item ${x.pending?'is-pending':'is-complete'}"><div><b>Faculty</b> ${esc(x.name)}</div><div><b>Activities Involved</b> ${x.count}</div><div><b>Implemented</b> ${x.implemented} &nbsp;·&nbsp; <b>For Implementation</b> ${x.pending}</div><div style="margin-top:10px">${x.activities.map(a=>`<div class="act-tip-item project-status-item ${a.s==='Implemented'?'is-complete':'is-pending'}" style="margin-top:8px"><div class="project-status-head"><span class="project-status-badge">${a.s==='Implemented'?'✓ Implemented':'○ '+esc(a.s||'For Implementation')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div></div>`).join('')}<div class="nt"><b>${f.length} unique faculty member${f.length===1?'':'s'}</b>. Each faculty member is counted once even when involved in multiple activities.</div></div>`;
 }
-const trainingWeight=v=>{
- const s=S1(v).toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ');
- if(!s)return null;
- if(/^(?:<\s*8\s*hours?|less than 8 hours?)$/.test(s))return 0.5;
- if(/^(?:8\s*hours?(?:\s*\(one day\))?|1\s*day|one day)$/.test(s))return 1;
- if(/^2\s*days?$/.test(s))return 1.25;
- if(/^(?:3\s*-\s*4\s*days?|3\s*days?|4\s*days?)$/.test(s))return 1.5;
- if(/^(?:5\s*days?\s*or\s*more|5\+\s*days?|more than 4 days?)$/.test(s))return 2;
- return null;
-};
-const cleanNumber=n=>{if(n==null||!Number.isFinite(Number(n)))return 'N/A';const x=Number(n);return Number.isInteger(x)?String(x):x.toFixed(2).replace(/\.?0+$/,'')};
-const weightedTraineeRow=a=>{
- const p=a&&a.profile;if(!p||!Array.isArray(p.quality))return null;
- const rated=p.quality.reduce((u,v)=>u+(Number(v)||0),0),weight=trainingWeight(p.lengthTraining);
- if(rated<=0||weight==null)return null;
- return {a,rated,weight,length:p.lengthTraining,weighted:rated*weight};
-};
-const weightedTraineeTipHtml=A=>{
- const cur=periodsIndex().find(p=>p.key===st.per),year=cur&&cur.year?Number(cur.year):EMB_Y;
- const rows=(A||[]).filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===year}).map(a=>{
-  const p=a.profile||{},x=Array.isArray(p.quality)?p.quality.map(v=>Number(v)||0):[0,0,0,0,0],rated=x.reduce((u,v)=>u+v,0),weight=trainingWeight(p.lengthTraining),done=a.s==='Implemented',included=done&&rated>0&&weight!=null;
-  const status=!done?(a.s||'For Implementation'):rated<=0?'No Rating Reported':weight==null?'Length of Training Missing':`Included — Weighted: ${cleanNumber(rated*weight)}`;
-  return {a,p,x,rated,weight,done,included,status,weighted:included?rated*weight:null};
- });
- const total=rows.reduce((u,r)=>u+(r.weighted||0),0);
- if(!rows.length)return '<div class="act-hover-tip"><div class="nt">No activities are scheduled for the selected fiscal year.</div></div>';
- return `<div class="act-hover-tip project-status-list">${rows.map(r=>`<div class="act-tip-item project-status-item ${r.included?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${r.included?'✓ '+esc(r.status):'○ '+esc(r.status)}</span></div><div><b>Program</b> ${esc(fullProg(r.a))}</div><div><b>Project</b> ${r.a.proj&&r.a.proj.no!=null?esc(`Project ${r.a.proj.no}${r.a.proj.title?' - '+r.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+r.a.n+' - '+r.a.title)}</div>${r.done?`<div><b>Rating breakdown</b> P: ${r.x[0]} · F: ${r.x[1]} · S: ${r.x[2]} · VS: ${r.x[3]} · E: ${r.x[4]}</div><div><b>Trainees Rated</b> ${cleanNumber(r.rated)}</div><div><b>Length of Training</b> ${esc(r.p.lengthTraining||'Not reported')}</div><div><b>Weight</b> ${r.weight==null?'N/A':cleanNumber(r.weight)}</div>${r.included?`<div><b>Weighted Trainees</b> ${cleanNumber(r.rated)} × ${cleanNumber(r.weight)} = <b>${cleanNumber(r.weighted)}</b></div>`:''}`:''}</div>`).join('')}<div class="nt"><b>Total Weighted Trainees: ${cleanNumber(total)}</b>. Computed automatically from valid trainee ratings × the approved length-of-training weight.</div></div>`;
-};
 function profileTotals(A){let faculty=0,students=0,q=[0,0,0,0,0],t=[0,0,0,0,0],hasF=false,hasS=false,hasQ=false,hasT=false;A.forEach(a=>{const p=a.profile;if(!p)return;if(p.faculty!=null){faculty+=p.faculty;hasF=true}if(p.students!=null){students+=p.students;hasS=true}p.quality.forEach((v,i)=>{q[i]+=v;if(v)hasQ=true});p.timeliness.forEach((v,i)=>{t[i]+=v;if(v)hasT=true})});const sat=x=>{const den=x.reduce((a,b)=>a+b,0),num=x[2]+x[3]+x[4];return den?{den,num,rate:num/den*100}:null};return{faculty:hasF?faculty:null,students:hasS?students:null,q:hasQ?sat(q):null,t:hasT?sat(t):null}}
 function distPanel(title,items,kind,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);let a=0;const g=segs.map(([,v,col])=>{const z=a;a+=v/total*100;return`${col} ${z}% ${a}%`}).join(',');const legend=segs.map(([n,v,col])=>`<div class="chart-click" data-okind="${kind}" data-oval="${esc(n)}" title="Click to show matching activities"><i style="background:${col}"></i>${esc(n)}<b>${v} (${pf(ratio(v,total)||0)})</b></div>`).join('');return P(title,'',`<div class="dist-clean"><div class="dr"><div class="dn" style="background:conic-gradient(${g})"><div><b>${total}</b><small>${unit}</small></div></div><div class="lg">${legend}</div></div></div>`,'chart')}
 function sdgPanel(items){if(!items.length)return P('Activities Contributing to the SDGs','','<div class="nt">No SDG contribution data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),mx=Math.max(...items.map(x=>x[1]),1);const rows=items.map(([n,v])=>`<div class="sdgbar-row chart-click" data-okind="sdg" data-oval="${esc(n)}" title="Click to show activities contributing to this SDG"><div class="sdgbar-label">${esc(n)}</div><div class="sdgbar-track"><div class="sdgbar-fill" style="width:${v/mx*100}%"></div></div><div class="sdgbar-value">${v} · ${pf(ratio(v,total)||0)}</div></div>`).join('');return P('Activities Contributing to the SDGs','',`<div class="sdgbar">${rows}</div>`,'chart')}
@@ -588,21 +590,17 @@ function autoPiRows(S){
   setResult(p2,programs.length?done:null,rem,pending.length>0);
  }
 
- /* PI-03: weighted external beneficiaries. For every implemented activity in the
-    selected fiscal year, count the valid Quality & Relevance responses
-    (P+F+S+VS+E) and multiply that count by the approved Length of Training weight:
-    <8 hours=.5; 8 hours/one day=1; 2 days=1.25; 3-4 days=1.5; 5+ days=2. */
+ /* PI-03: weighted external beneficiaries.
+    For each IMPLEMENTED activity in the selected fiscal year:
+      trainees rated = P + F + S + VS + E (Quality & Relevance)
+      weighted trainees = trainees rated × training-length weight.
+    Weight table: <8 hours=.5; 8 hours/one day=1; 2 days=1.25; 3-4 days=1.5; 5+ days=2. */
  if(p3){
-  const implemented=AY.filter(a=>a.s==='Implemented');
-  const rows=implemented.map(weightedTraineeRow).filter(Boolean);
+  const calc=weightedBeneficiaryRows(AY),rows=calc.filter(x=>x.eligible);
   const total=rows.reduce((u,x)=>u+x.weighted,0);
-  const missing=implemented.filter(a=>{
-   const p=a.profile;if(!p||!Array.isArray(p.quality))return false;
-   const rated=p.quality.reduce((u,v)=>u+(Number(v)||0),0);
-   return rated>0&&trainingWeight(p.lengthTraining)==null;
-  });
-  let rem=rows.length?'Weighted trainee breakdown per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${cleanNumber(x.rated)} trainees × ${cleanNumber(x.weight)} (${x.length}) = ${cleanNumber(x.weighted)}`).join('\n'):'No implemented activity has both trainee ratings and a valid Length of Training.';
-  if(missing.length)rem+='\n\nNot yet included because Length of Training is blank or unrecognized: '+missing.map(a=>`${a.proj&&a.proj.no!=null?'Project '+a.proj.no+' ':''}Activity ${a.n}`).join(', ')+'.';
+  const missing=calc.filter(x=>x.a.s==='Implemented'&&x.trainees>0&&x.weight==null);
+  let rem=rows.length?'Weighted trainee breakdown per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.trainees} trainees × ${x.weight} (${x.length}) = ${fmtWeighted(x.weighted)}`).join('\n'):'No implemented activity has both trainee ratings and a recognized Length of Training.';
+  if(missing.length)rem+='\nNot yet included (Length of Training missing/unrecognized):\n'+missing.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}`).join('\n');
   setResult(p3,rows.length?total:null,rem,rows.length>0);
  }
 
@@ -632,7 +630,7 @@ function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),ga
  const excluded=new Set(featured); const fillers=I.filter(i=>!excluded.has(i)&&!/^Percentage of trainees/i.test(i.pi)&&!/Budget Utilization Rate/i.test(i.pi)&&!/approved extension programs/i.test(i.pi)&&!/Memorandum of Understanding|Memorandum of Agreement/i.test(i.pi));
  while(featured.length<5&&fillers.length)featured.push(fillers.shift());
  const K0=withHoverTip(card('●','Performance Indicators MET',`${met.length} / ${I.length}`,ratio(met.length,I.length),`${pf(ratio(met.length,I.length))} achieved`),allPiTip());
- const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;const tip=i===p3?weightedTraineeTipHtml(S.acts):piTip(i);return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),tip)}).join('');
+ const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),(i===p3?weightedBeneficiaryTipHtml(S.acts):piTip(i)))}).join('');
  const K=K0+K1;
  const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
  const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
