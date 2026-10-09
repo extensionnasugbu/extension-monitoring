@@ -1,0 +1,1499 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Extension Services Performance Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Public+Sans:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--g:#12372F;--g2:#2F8F5B;--gt:#17302A;--bg:#F3F7F4;--card:#FFFFFF;--tx:#17302A;--bd:#D3E0D9;--th:#DDEBE3;--ink:#17302A;--mut:#5B706A;--leaf:#2F8F5B;--gold:#E3A72F;--tint:#DDEBE3;--bad:#B4472F}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1D19;--card:#172A24;--tx:#E5F0EA;--bd:#2A423A;--ink:#E5F0EA;--mut:#93AAA2;--gt:#4CBF82;--g:#12372F;--g2:#4CBF82;--th:#1F3A31;--leaf:#4CBF82;--tint:#1F3A31}}
+:root[data-theme="dark"]{--bg:#0F1D19;--card:#172A24;--tx:#E5F0EA;--bd:#2A423A;--ink:#E5F0EA;--mut:#93AAA2;--gt:#4CBF82;--g:#12372F;--g2:#4CBF82;--th:#1F3A31;--leaf:#4CBF82;--tint:#1F3A31}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:12px/1.35 "Public Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;overflow-wrap:break-word}
+.wrap{max-width:13in;margin:0 auto;padding:8px}
+.hd{background:var(--g);color:#fff;border-radius:10px;padding:12px 18px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hd small{letter-spacing:.16em;font-weight:600;opacity:.85;font-size:10.5px}.hd h1{margin:2px 0 3px;font-size:23px;font-weight:800}.hd p{margin:0;opacity:.92;font-size:12.5px}.hd .r{text-align:right;font-size:11px}
+.sc{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:8px 12px;margin:8px 0}
+.sc label{display:block;font-size:9.5px;letter-spacing:.06em;font-weight:700;color:var(--mut);margin-bottom:2px}.sc select{font:inherit;padding:5px 8px;border:1px solid var(--g);border-radius:6px;background:var(--card);color:var(--tx);width:230px;max-width:230px}.sc select.sm{width:132px;max-width:132px}.sc select:focus{outline:2px solid #E3A72F;outline-offset:1px}.sc .grow{flex:1;min-width:200px}.sc .grow select{width:100%;max-width:none}
+.viewrow{font-weight:700;color:var(--gt);font-size:15px;margin:-2px 0 8px;text-align:left}
+.addbox{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px dashed var(--g);border-radius:8px;padding:8px 12px;margin:0 0 8px}.addbox label{font-size:11px;color:var(--mut);display:flex;align-items:center;gap:4px}.addbox input,.addbox select{font:inherit;padding:4px 6px;border:1px solid var(--bd);border-radius:5px;background:var(--card);color:var(--tx)}.addbox #amsg{flex-basis:100%;margin:0}
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}.tabs button{flex:1;min-width:150px;padding:8px 10px;border:1px solid var(--g);background:var(--card);color:var(--gt);border-radius:8px;font:600 12px "Public Sans",system-ui,sans-serif;cursor:pointer}.tabs button:hover{background:color-mix(in srgb,#DDEBE3 45%,var(--card))}.tabs button.on{background:var(--g);color:#fff;border-color:var(--g)}.tabs button.on:hover{background:var(--g2)}
+.v{display:none}.v.on{display:block}
+.k{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.kc{--c:#2F8F5B;background:color-mix(in srgb,var(--c) 9%,var(--card));border:1px solid color-mix(in srgb,var(--c) 25%,var(--bd));border-radius:10px;padding:8px 11px}
+
+.kh{display:flex;align-items:center;gap:8px}.kh b{font-size:11.5px;line-height:1.2;color:var(--ink)}.ic{width:26px;height:26px;border-radius:50%;background:var(--c);color:#fff;display:grid;place-items:center;font-size:13px;flex:none}
+.kv{font-size:26px;font-weight:800;color:var(--ink);margin:3px 0 4px;line-height:1.1}.pb{height:7px;border-radius:5px;background:color-mix(in srgb,#DDEBE3 45%,var(--card));overflow:hidden}.pb i{display:block;height:100%;background:var(--c);border-radius:5px}
+.ks{font-size:11px;font-weight:600;color:var(--ink);margin-top:5px}.ki{font-size:10.5px;font-style:italic;color:var(--mut)}
+.p{background:var(--card);border:1px solid var(--bd);border-radius:10px;overflow:hidden}.p>h3{margin:0;background:var(--g);color:#fff;font-size:12px;letter-spacing:.03em;padding:7px 12px;text-transform:uppercase;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 8px}.p>h3 em{font-weight:500;opacity:.9;font-size:10.5px;text-transform:none}
+.todobox{height:100%;min-height:0;display:flex;flex-direction:column}.todobox .b{flex:1;min-height:0;max-height:none;overflow-y:auto}
+.ipcrbox .b{max-height:230px;overflow-y:auto;padding:8px 11px}.ipcrbox .todo-cat{margin-bottom:0;padding-bottom:0;border-bottom:none}.ipcr-list{display:flex;flex-direction:column}.ipcr-row{display:grid;grid-template-columns:46px 1fr;gap:10px;align-items:start;padding:9px 0;border-bottom:1px solid var(--bd)}.ipcr-row:last-child{border-bottom:none}.ipcr-badge{display:grid;place-items:center;min-height:38px;border-radius:9px;background:var(--th);color:var(--ink);font:800 20px/1 "Bricolage Grotesque",sans-serif}.ipcr-badge.pending{font-size:13px}.ipcr-main{min-width:0;padding-top:1px}.ipcr-project{font-weight:800;color:var(--ink);font-size:11.5px;margin-bottom:2px}.ipcr-desc{font-size:10.5px;font-style:italic;color:var(--mut);line-height:1.35}.docreq{height:100%}.docreq .b{height:calc(100% - 31px);display:flex;flex-direction:column}.docreq .docnote{margin-top:auto}
+.p.tva .b{height:600px;overflow-y:auto}
+.pidbox{height:600px}
+.p .b{padding:8px 11px}.p.np .b{padding:0}
+.p.chart{display:flex;flex-direction:column}.p.chart .b{flex:1;display:flex;align-items:center;justify-content:center}
+.g2{display:grid;gap:8px;grid-template-columns:1.9fr 1fr;margin:8px 0;align-items:start}.g2>.col{height:0;min-height:100%;min-width:0;grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}.g2>.col>.todobox{min-height:0;overflow:hidden}.g2>.col>.todobox .b{min-height:0;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}.g3{display:grid;gap:8px;grid-template-columns:1fr 1fr}.col{display:grid;gap:8px;align-content:start}
+@media(max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+.tw{overflow:auto;max-height:600px}table{border-collapse:collapse;width:100%;font-size:11px}th{background:#EDF5F0;color:#17302A;font-size:10.5px;padding:5px 6px;position:sticky;top:0;z-index:1;text-align:center}td{padding:4px 6px;border-top:1px solid var(--bd);vertical-align:top}td.c{text-align:center}td.nw{white-space:nowrap}.rm{font-size:10px;color:var(--mut);min-width:190px}
+.ovt{table-layout:fixed}.ovt th,.ovt td{padding:6px 8px}.ovt td.nw,.ovt th:first-child{width:26%;min-width:220px;white-space:normal;overflow-wrap:break-word}.ovt th:not(:first-child),.ovt td.c{width:9%;min-width:78px}.ovt small{white-space:normal}
+.tw th{white-space:normal;line-height:1.25;padding:6px 8px}.tw td{line-height:1.35}.tw td.c,.tw th{min-width:70px}.tw td:first-child:not(.c){min-width:110px}
+.todo-cat{margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--bd)}.todo-cat:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}.todo-cat>b{display:block;font-size:10.5px;color:var(--gt);margin-bottom:4px;line-height:1.3}
+.todo-lines div{font-size:10.5px;line-height:1.4;padding:2px 0 2px 12px;position:relative;color:var(--tx)}.todo-lines div:before{content:'';position:absolute;left:0;top:8px;width:5px;height:5px;border-radius:50%;background:var(--g)}
+tr.ph td{background:var(--th);font-weight:700;color:var(--gt);font-size:11px}tr.ph span{font-weight:500;color:var(--mut);float:right}
+.bd{display:inline-block;padding:2px 8px;border-radius:5px;font-weight:700;font-size:10.5px;white-space:nowrap}
+.bd.ok{background:#EDF5F0;color:#17302A}.bd.am{background:#DDEBE3;color:#17302A}.bd.rd{background:repeating-linear-gradient(45deg,#12372F 0 6px,#B4472F 6px 12px);color:#fff;border:1px solid #DDEBE3}.bd.na{background:#DDEBE3;color:#5B706A}
+td.ok{background:#EDF5F0;color:#17302A}td.am{background:color-mix(in srgb,#DDEBE3 55%,var(--card))}td.rd{background:repeating-linear-gradient(45deg,#12372F 0 6px,#B4472F 6px 12px);color:#fff;font-weight:700}td.na{color:#5B706A}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,#DDEBE3 25%,var(--card))}
+.gh{font-size:10px;letter-spacing:.06em;font-weight:700;color:var(--gt);margin:6px 0 3px;text-transform:uppercase}.tr{margin-bottom:7px}.tl{display:flex;justify-content:space-between;gap:8px;font-size:10.5px}.tl b:last-child{white-space:nowrap}
+.pb i.g{background:#2F8F5B}.pb i.a{background:#E3A72F}
+.dr{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}.dn{width:118px;height:118px;border-radius:50%;display:grid;place-items:center;flex:none}.dn>div{width:74px;height:74px;border-radius:50%;background:var(--card);display:grid;place-content:center;text-align:center;line-height:1.1}.dn b{font-size:19px;color:var(--ink)}.dn small{font-size:9px;color:var(--mut)}
+.lg{min-width:150px}.lg div{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:11px;white-space:nowrap}.lg i{width:10px;height:10px;border-radius:50%;flex:none}.lg b{margin-left:4px}
+.bc{display:flex;gap:10px;align-items:flex-end;justify-content:center;overflow-x:auto;padding-bottom:2px}.bc>div{flex:0 0 auto;min-width:66px;max-width:96px;text-align:center;font-size:9.5px}.bc .lbl{display:block;min-height:2.5em;margin-top:5px;line-height:1.25;overflow-wrap:break-word;color:var(--mut)}
+.bars{display:flex;align-items:flex-end;justify-content:center;height:90px;gap:4px;border-bottom:1px solid var(--bd);padding-top:16px}.bars i{width:16px;flex:none;position:relative;font-style:normal;border-radius:2px 2px 0 0;background-color:var(--bd)}.bars b{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8.5px;font-weight:700;white-space:nowrap;color:var(--ink)}
+.bp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center;margin-bottom:8px}.bp span{display:block;font-size:10px;color:var(--mut)}.bp b{font-size:15px;color:var(--ink)}
+.nt{font-size:10.5px;color:var(--mut);font-style:italic;margin-top:6px}
+ul{margin:0;padding:0;list-style:none}li{position:relative;padding-left:14px;margin:4px 0;font-size:11.5px}li:before{content:"";position:absolute;left:0;top:5px;width:7px;height:7px;border-radius:50%;background:var(--g)}
+.ft{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;font-size:10px;color:var(--mut);margin-top:10px;border-top:1px solid var(--bd);padding-top:6px}
+
+
+.g4{display:grid;gap:8px;grid-template-columns:repeat(3,1fr);margin:8px 0}@media(max-width:900px){.g4{grid-template-columns:1fr}}
+tr.cb td{background:var(--g);color:#fff;font-weight:700}tr.pg td{background:#EDF5F0;color:#17302A;font-weight:600}tr.cb:hover td{background:var(--g)!important}tr.pg:hover td{background:#EDF5F0!important;color:#17302A!important}
+.up{cursor:pointer;border:1px solid #fff;border-radius:6px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;margin:4px 0}.up:hover{background:#DDEBE3;color:#17302A}
+small{color:var(--mut);font-size:9.5px}tr.cb small,.hd small{color:inherit}
+.k5{grid-template-columns:repeat(5,1fr)}@media(max-width:1000px){.k5{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.k5{grid-template-columns:1fr}}.kc{position:relative;cursor:pointer}.kc::after{content:'\24D8';position:absolute;top:6px;right:9px;font-size:12px;line-height:1;color:var(--mut)}.kc .kh{padding-right:16px}
+/* Hover activity drill-down tooltip */
+.kc.has-act-tip{cursor:pointer}
+.act-hover-tip{display:none}
+.act-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.act-tip-item:last-child{border-bottom:0}.act-tip-item div{margin:2px 0}.act-tip-item b{font-weight:700;color:var(--ink)}
+.card-dialog-backdrop{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.38);padding:20px;align-items:center;justify-content:center}
+.card-dialog-backdrop.open{display:flex}
+.card-dialog{width:min(940px,100%);max-height:min(76vh,650px);overflow:hidden;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+.card-dialog-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;background:var(--g);color:#fff}
+.card-dialog-head b{font:700 15px "Bricolage Grotesque","Public Sans",sans-serif}
+.card-dialog-close{border:0;background:transparent;color:#fff;font-size:24px;line-height:1;cursor:pointer;padding:0 2px}
+.card-dialog-body{padding:14px 16px;max-height:calc(min(76vh,650px) - 50px);overflow:auto;font-size:11.5px;line-height:1.55}
+.card-dialog-summary{white-space:pre-line;margin-bottom:8px}
+.card-dialog-body .act-hover-tip{display:block;position:static;transform:none;width:auto;min-width:0;max-width:none;max-height:none;overflow:visible;padding:0;border:0;border-radius:0;background:transparent;color:inherit;box-shadow:none;font-size:11px;pointer-events:auto}
+.card-dialog-body .project-status-item{padding:10px 12px;margin:0 0 7px;border:1px solid var(--bd);border-radius:7px;background:var(--card)}
+.card-dialog-body .sdg-popup-list{display:block}.card-dialog-body .sdg-popup-item{padding:10px 12px;margin:0 0 7px;border:1px solid var(--bd);border-radius:7px;background:var(--card)}.card-dialog-body .sdg-popup-item div{margin:2px 0}.card-dialog-body .sdg-popup-item b{font-weight:700;color:var(--ink)}.card-dialog-body .project-status-item.is-pending{background:#f1f3f2}.project-status-head{display:flex;justify-content:flex-end;margin-bottom:4px}.project-status-badge{font-weight:700;font-size:10.5px}.is-complete .project-status-badge{color:var(--g2)}.is-pending .project-status-badge{color:var(--mut)}.card-dialog-body .project-status-item.is-complete > .project-status-head .project-status-badge{color:#2F8F5B}
+body.dialog-open{overflow:hidden}
+
+/* Extension Services Guide branding */
+.hd h1,.viewrow,.p>h3,.kh b,.kv,.bp b,.dn b,.todo-cat>b,.gh,
+h1,h2,h3{font-family:"Bricolage Grotesque","Public Sans",sans-serif}
+.sc select:focus{outline-color:var(--gold)}
+.tabs button:hover{background:var(--tint)}
+.tabs button.on{background:var(--deep,var(--g));border-color:var(--g)}
+.kc{--c:var(--leaf)}
+.pb{background:var(--tint)}
+.bd.ok{background:var(--leaf);color:#fff}
+.bd.am{background:var(--gold);color:#17302A}
+.bd.rd{background:var(--bad);color:#fff;border-color:var(--bad)}
+.bd.na{background:var(--tint);color:var(--mut)}
+td.ok{background:color-mix(in srgb,var(--leaf) 16%,var(--card))}
+td.am{background:color-mix(in srgb,var(--gold) 25%,var(--card))}
+td.rd{background:color-mix(in srgb,var(--bad) 88%,var(--card));color:#fff;font-weight:700}
+tr:not(.ph):hover td:not(.ok):not(.am):not(.rd){background:color-mix(in srgb,var(--tint) 70%,var(--card))}
+.pb i.g{background:var(--leaf)}.pb i.a{background:var(--gold)}
+.up:hover{background:var(--gold);color:#17302A}
+
+/* Simple documentary hover details - same clean behavior as scorecards */
+.has-doc-tip{position:relative;cursor:pointer}
+.has-doc-tip:hover{background:#e7e7e7!important;color:#17302A!important}
+.doc-tip{display:none;position:absolute;z-index:50;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);width:max-content;max-width:310px;padding:8px 10px;border:1px solid #cfd5d2;border-radius:5px;background:#fff;color:#17302A;text-align:left;font-size:10.5px;font-weight:400;line-height:1.45;box-shadow:0 3px 10px rgba(0,0,0,.12);white-space:nowrap;pointer-events:none}
+.doc-tip b{font-weight:700;color:#17302A}
+.has-doc-tip:hover .doc-tip{display:block}
+
+/* Overview distribution charts: compact, aligned, readable */
+.g4.overview-charts{grid-template-columns:1fr 1fr 1.15fr;align-items:stretch}
+.g4.overview-charts>.p{min-height:300px}
+.dist-clean{width:100%;display:flex;flex-direction:column;gap:10px;align-self:stretch}
+.dist-clean .dr{justify-content:flex-start;align-items:center;flex-wrap:nowrap}
+.dist-clean .lg{flex:1;min-width:0}
+.dist-clean .lg div{white-space:normal;align-items:flex-start;line-height:1.3;margin:6px 0}
+.dist-clean .lg b{margin-left:auto;white-space:nowrap}
+.sdgbar{width:100%;display:flex;flex-direction:column;gap:9px;align-self:stretch}
+.sdgbar-row{display:grid;grid-template-columns:minmax(0,1fr) 110px 62px;gap:10px;align-items:center}
+.sdgbar-label{font-size:10.5px;line-height:1.25;color:var(--tx);font-weight:600}
+.sdgbar-track{height:10px;background:var(--tint);border-radius:999px;overflow:hidden}
+.sdgbar-fill{height:100%;background:var(--leaf);border-radius:999px;min-width:4px}
+.sdgbar-value{text-align:right;font-size:10.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.chart-note{font-size:9.5px;color:var(--mut);margin-top:auto;padding-top:3px}
+.chart-click{cursor:pointer;border-radius:6px;transition:background .15s ease,outline .15s ease}.chart-click:hover{background:#eef3f0}.chart-click.sel{background:#e3eee8;outline:1px solid #a9cbb8}.profile-head{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px}.profile-head b{font-size:12px}.profile-head button{border:1px solid #9fb7ac;background:#fff;border-radius:6px;padding:5px 9px;font-size:10px;cursor:pointer}.profile-head button:disabled{opacity:.55;cursor:default;background:#f4f7f5}.profile-empty{font-size:11px;color:var(--mut);padding:10px 0}.activity-profile{margin-top:10px}.activity-profile table td:first-child{font-weight:700;white-space:nowrap}
+@media(max-width:1000px){.g4.overview-charts{grid-template-columns:1fr 1fr}.g4.overview-charts>.p:last-child{grid-column:1/-1}}
+
+.sdg-rank-panel{margin-top:10px}.sdg-rank{padding:12px 14px;display:flex;flex-direction:column;gap:7px}.sdg-rank-row{display:grid;grid-template-columns:330px minmax(180px,1fr) 90px;gap:12px;align-items:center;border-radius:5px;padding:2px 4px}.sdg-goal{min-height:38px;display:flex;align-items:center;padding:3px 0;color:var(--ink);font-weight:800;font-size:11px;line-height:1.15;background:transparent!important;white-space:nowrap}.sdg-num,.sdg-name{font-size:11px;line-height:1.15;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.15px;white-space:nowrap}.sdg-rank-track{height:28px;background:#eef3f0;border-radius:2px;position:relative;cursor:default}.sdg-rank-track.sdg-clickable{cursor:pointer}.sdg-rank-fill{height:100%;border-radius:2px;background:var(--leaf)!important}.sdg-rank-value{font-size:11px;font-weight:800;color:var(--ink);white-space:nowrap}.sdg-rank-note{padding:0 14px 12px;color:var(--mut);font-size:10px;font-style:italic}.sdg-rank-row:hover{background:#f5f8f6}.sdg-tip{display:none;position:absolute;z-index:50;left:12px;top:calc(100% + 6px);width:min(560px,70vw);max-height:320px;overflow:auto;background:#fff;border:1px solid var(--bd);border-radius:7px;padding:10px 12px;box-shadow:0 8px 22px rgba(17,55,44,.16);font-size:10.5px;line-height:1.35;color:var(--tx)}.sdg-rank-track:hover .sdg-tip,.sdg-rank-track:focus-within .sdg-tip{display:none}.sdg-tip-item{padding:7px 0;border-bottom:1px solid var(--bd)}.sdg-tip-item:last-child{border-bottom:0}.sdg-tip b{color:var(--ink)}
+@media(max-width:800px){.sdg-rank-row{grid-template-columns:300px minmax(100px,1fr) 72px}.sdg-goal,.sdg-name,.sdg-num{font-size:10px}.sdg-tip{width:min(480px,75vw)}}
+@media(max-width:700px){.g4.overview-charts{grid-template-columns:1fr}.g4.overview-charts>.p:last-child{grid-column:auto}.sdgbar-row{grid-template-columns:minmax(0,1fr) 90px 54px}}
+
+/* Authentication gate */
+#authGate{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.auth-card{width:min(460px,100%);overflow:hidden;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.28);padding:0}
+.auth-head{padding:12px 15px;background:var(--g);color:#fff}.auth-head b{display:block;font:700 15px "Bricolage Grotesque","Public Sans",sans-serif}.auth-head small{display:block;margin-top:2px;font-size:9.5px;letter-spacing:.05em;opacity:.86}
+.auth-body{padding:16px}.auth-intro{font-size:11.5px;color:var(--mut);margin:0 0 14px;line-height:1.5}.auth-field{margin:11px 0}.auth-field label{display:block;font-size:9.5px;font-weight:700;letter-spacing:.06em;color:var(--mut);margin-bottom:4px}.auth-field input{box-sizing:border-box;width:100%;padding:9px 10px;border:1px solid var(--bd);border-radius:7px;background:var(--card);color:var(--tx);font:inherit}.auth-field input:focus{outline:2px solid #E3A72F;outline-offset:1px;border-color:var(--g)}.auth-btn{width:100%;margin-top:7px;border:1px solid var(--g);border-radius:7px;padding:9px 12px;background:var(--g);color:#fff;font:700 11.5px "Public Sans",sans-serif;cursor:pointer}.auth-btn:hover{background:var(--g2);border-color:var(--g2)}.auth-btn:disabled{opacity:.6;cursor:wait}.auth-msg{min-height:17px;margin:8px 0 0!important;color:var(--bad)!important;font-size:10.5px!important}.auth-session{margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);font-size:9.5px;color:var(--mut);text-align:center}.auth-userbar{position:fixed;right:14px;bottom:14px;z-index:9000;background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:999px;padding:6px 8px 6px 12px;box-shadow:0 4px 16px rgba(0,0,0,.14);font-size:10px;display:none;align-items:center;gap:8px}.auth-userbar button{border:0;background:var(--g);color:#fff;border-radius:999px;padding:5px 9px;font-size:10px;cursor:pointer}
+
+.auth-password-wrap{
+  position:relative;
+}
+.auth-password-wrap input{
+  width:100%;
+  padding-right:46px !important;
+}
+.auth-password-toggle{
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
+  width:28px;
+  height:28px;
+  border:0;
+  background:transparent;
+  padding:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  color:#52635d;
+  border-radius:6px;
+}
+.auth-password-toggle:hover{
+  background:#eef5f1;
+  color:#0d493b;
+}
+.auth-password-toggle:focus-visible{
+  outline:2px solid #0d493b;
+  outline-offset:2px;
+}
+.auth-password-toggle svg{
+  width:19px;
+  height:19px;
+  pointer-events:none;
+}
+
+</style></head><body><div id="authGate">
+ <form class="auth-card" id="authForm" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+  <div class="auth-head"><b id="authTitle">Extension Services Performance Dashboard Login</b><small>BATANGAS STATE UNIVERSITY · ARASOF-NASUGBU</small></div>
+  <div class="auth-body">
+   <p class="auth-intro">Sign in using your Extension Services monitoring account.</p>
+   <div class="auth-field"><label>USERNAME</label><input id="authUsername" autocomplete="username" required></div>
+   <div class="auth-field">
+  <label>PASSWORD</label>
+  <div class="auth-password-wrap">
+    <input id="authPassword" type="password" autocomplete="current-password" required>
+    <button id="authPasswordToggle" class="auth-password-toggle" type="button" aria-label="Show password" title="Show password">
+      <svg id="authEyeOpen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path>
+        <circle cx="12" cy="12" r="3"></circle>
+      </svg>
+      <svg id="authEyeClosed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none">
+        <path d="M3 3l18 18"></path>
+        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"></path>
+        <path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.1 3.2"></path>
+        <path d="M6.6 6.6C3.6 8.6 2 12 2 12s3.5 8 10 8a9.8 9.8 0 0 0 4.1-.9"></path>
+      </svg>
+    </button>
+  </div>
+</div>
+   <button class="auth-btn" id="authSubmit" type="submit">Sign In</button>
+   <p class="auth-msg" id="authMsg"></p>
+   <div class="auth-session">Secure access is limited to authorized users.</div>
+  </div>
+ </form>
+</div>
+<div class="auth-userbar" id="authUserbar"><span id="authWho"></span><button type="button" id="authLogout">Logout</button></div><div class="wrap">
+<div class="hd"><div><small>BATANGAS STATE UNIVERSITY The National Engineering University<br>ARASOF - Nasugbu</small><h1>EXTENSION SERVICES PERFORMANCE DASHBOARD</h1><p>Consolidated Performance &amp; Budget Status Report</p></div><div class="r"><b>SOURCE: AOP · QEO · OPCR · OPMM</b><br>EXTENSION SERVICES OFFICE<br><span id="liveStatus" style="font-weight:700">● LIVE DATABASE</span><br><span id="src" style="opacity:.85"></span></div></div>
+<div class="sc"><b style="align-self:center;font-size:13px">▼ Report scope</b><div><label>YEAR</label><select id="yr" class="sm"></select></div><div><label>QUARTER</label><div style="display:flex;gap:4px"><select id="qr" class="sm"></select></div></div><div class="grow"><label>COLLEGE</label><select id="col"></select></div><div class="grow"><label>EXTENSION PROGRAM</label><select id="prog"></select></div></div>
+<div id="view" class="viewrow"></div>
+<div class="nt" id="pernote" style="margin:-4px 0 8px"></div>
+<div id="adminLogin" style="display:none"></div><div id="adminUpload" style="display:none"></div><input id="fx" type="file" style="display:none"><button id="delp" style="display:none"></button><div id="addbox" class="addbox" style="display:none">
+ <b>Add this workbook as:</b>
+ <span id="addfields" style="display:contents"><label>Year <input type="number" id="ay" min="2000" max="2100" style="width:72px"></label>
+ <label>Quarter <select id="aq"><option>Q1</option><option>Q2</option><option>Q3</option><option>Q4</option></select></label>
+ <button id="asave" class="up">Save</button></span>
+ <button id="acancel" class="up" style="border-color:var(--bd);color:var(--mut)">Cancel</button>
+ <div id="amsg" class="nt"></div>
+</div>
+<div class="tabs"><button data-t="O"></button><button data-t="A">A · Performance Indicators</button><button data-t="B">B · Activities &amp; Budget</button><button data-t="C">C · Documentary Requirements</button></div>
+<div id="vO" class="v"></div><div id="vA" class="v"></div><div id="vB" class="v"></div><div id="vC" class="v"></div>
+</div>
+<script>
+/* ---- ESO / VCRDES / College / Faculty authentication ---- */
+const AUTH_API='https://script.google.com/macros/s/AKfycbw57gqz4zLcQXCKieBk1Z8aeALuh6j3CbdhygwOvPo-DPfTx1OXFQwHImCxGqlCeNNs2Q/exec';
+let AUTH_USER=null;
+async function authCall(payload){
+ const res=await fetch(AUTH_API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'});
+ if(!res.ok)throw new Error('Authentication service returned HTTP '+res.status);
+ return await res.json();
+}
+function authCanSeeAll(){return AUTH_USER&&['ESO','VCRDES'].includes(String(AUTH_USER.role||'').toUpperCase())}
+function authCollegeKey(){
+ if(!AUTH_USER||authCanSeeAll())return null;
+ const wanted=String(AUTH_USER.college||'').trim().toLowerCase();
+ const keys=Object.keys((DB&&DB.cols)||{});
+ return keys.find(k=>k.toLowerCase()===wanted)||keys.find(k=>String(DB.cols[k].name||'').trim().toLowerCase()===wanted)||null;
+}
+function applyAuthScope(){
+ if(!AUTH_USER)return;
+ if(!authCanSeeAll()){
+  const k=authCollegeKey();
+  if(k){st.c=k;st.p='ALL'}
+ }
+}
+function showAuthenticated(u){
+ AUTH_USER=u; document.getElementById('authGate').style.display='none';
+ const bar=document.getElementById('authUserbar');bar.style.display='flex';
+ document.getElementById('authWho').textContent=
+   (String(u.role||'').toUpperCase()==='FACULTY' && u.facultyName
+     ? u.facultyName+' · '+(u.college||'')+' · FACULTY'
+     : (u.username||'User')+' · '+(u.role||''));
+}
+async function restoreAuth(){
+ const token=sessionStorage.getItem('eso_auth_token'); if(!token)return false;
+ try{const r=await authCall({action:'validateSession',token});if(!r.success)throw new Error(r.message||'Session expired');showAuthenticated(r);return true}catch(e){sessionStorage.removeItem('eso_auth_token');return false}
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ const form=document.getElementById('authForm'),btn=document.getElementById('authSubmit'),msg=document.getElementById('authMsg');
+ form.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='';btn.disabled=true;btn.textContent='Signing in…';
+  try{const r=await authCall({action:'login',username:document.getElementById('authUsername').value,password:document.getElementById('authPassword').value});if(!r.success)throw new Error(r.message||'Login failed');sessionStorage.setItem('eso_auth_token',r.token);showAuthenticated(r);applyAuthScope();if(typeof refreshLive==='function'){await refreshLive()}else if(typeof fillFilters==='function'){fillFilters();render()}}
+  catch(err){msg.textContent=err.message||'Unable to sign in.'}finally{btn.disabled=false;btn.textContent='Sign In'}
+ });
+ document.getElementById('authLogout').addEventListener('click',async()=>{const token=sessionStorage.getItem('eso_auth_token');sessionStorage.removeItem('eso_auth_token');try{if(token)await authCall({action:'logout',token})}catch(e){}location.reload()});
+ restoreAuth();
+});
+
+/*CORE*/
+const S1=x=>x==null?'':String(x).replace(/\s+/g,' ').trim(),nt=x=>S1(x).toLowerCase();
+const num=x=>{
+ if(typeof x==='number')return Number.isFinite(x)?x:null;
+ if(typeof x!=='string')return null;
+ let s=x.trim();if(!s)return null;
+ // Google Sheets may return formatted numeric cells (e.g. 11,600.00 or ₱11,600.00).
+ // Strip common display formatting while preserving genuine non-numeric notes such as N/A or For Disbursement.
+ s=s.replace(/\u00a0/g,' ').trim();
+ if(/^\(.*\)$/.test(s))s='-'+s.slice(1,-1);
+ s=s.replace(/^[₱$]\s*/,'').replace(/,/g,'').replace(/\s+/g,'');
+ // Live Google Sheets returns percentage cells as formatted strings such as 97% or 91%.
+ // Keep the dashboard's existing 0-100 percentage convention by stripping only the % sign.
+ if(/^-?\d+(?:\.\d+)?%$/.test(s)) return parseFloat(s.slice(0,-1));
+ return /^-?\d+(?:\.\d+)?$/.test(s)?parseFloat(s):null;
+};
+const parseDateLike=v=>{
+ if(v==null||v==='')return null;
+ if(v instanceof Date&&!isNaN(v))return v;
+ if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Date.UTC(1899,11,30)+Math.round(v)*86400000);return isNaN(d)?null:d}
+ const s=String(v).trim();
+ if(/^\d{5}(?:\.\d+)?$/.test(s)){const n=+s;if(n>20000&&n<80000)return new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000)}
+ let m=/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/.exec(s);if(m){const d=new Date(+m[3],+m[1]-1,+m[2]);return isNaN(d)?null:d}
+ m=/^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);if(m){const d=new Date(+m[1],+m[2]-1,+m[3]);return isNaN(d)?null:d}
+ const d=new Date(s);return isNaN(d)?null:d};
+const qv=s=>{const m=/Q([1-4]),?\s*(\d{4})/i.exec(String(s||''));if(m)return +m[2]*4+ +m[1]-1;const d=parseDateLike(s);return d?d.getFullYear()*4+Math.floor(d.getMonth()/3):null};
+const fmtDate=v=>{const d=parseDateLike(v);return d?d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}):S1(v)};
+const submittedDate=v=>{if(!/^submitted/i.test(String(v||'')))return null;const m=String(v).match(/(\d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{1,2}-\d{1,2}|(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})/i);return m?parseDateLike(m[1]):null};
+const dayDiff=(a,b)=>{const x=parseDateLike(a),y=parseDateLike(b);return x&&y?Math.round((y-x)/86400000):null};
+const timeScore=days=>days==null?null:days<=7?{t:'T5',p:5}:days<=14?{t:'T4',p:4}:days<=30?{t:'T3',p:3}:{t:'T2',p:2};
+const daysLate=(due,submitted)=>{const d=dayDiff(due,submitted);return d==null?null:Math.max(0,d)};
+const semiAnnualDeadline=ref=>{const d=parseDateLike(ref);if(!d)return null;const y=d.getFullYear(),m=d.getMonth();return m<6?new Date(y,6,3):new Date(y+1,0,3)};
+const docTip=(a,l,idx,projectLast)=>{const sd=submittedDate(l);if(!sd)return '';let due=null,label='Reference Date';if(idx===0||idx===1){due=parseDateLike(a.a);label='Implementation Date'}else if(idx===2){due=projectLast;label='Last Project Implementation'}else if(idx===3||idx===4){due=semiAnnualDeadline(a.a||projectLast);label='Semi-Annual Deadline'}else return '';if(!due)return '';const days=daysLate(due,sd),sc=timeScore(days);return `<div>${label}: <b>${esc(fmtDate(due))}</b></div><div>Date Submitted: <b>${esc(fmtDate(sd))}</b></div><div>Days After Due Date: <b>${days} day${days===1?'':'s'}</b></div><div>IPCR Timeliness Rating: <b>${sc.p}</b></div>`};
+const isPct=t=>/^Percentage|Rate$/i.test(t);
+const dc=l=>/^submitted/i.test(l)?'S':/^not yet/i.test(l)?'D':/pending|overdue/i.test(l)?'P':'N';
+const NOP='(No program listed)',asOf=new Date().getFullYear()*4+Math.floor(new Date().getMonth()/3);
+/* ---- 2. PARSING / NORMALIZATION (workbook rows -> college/program/project/activity records) ---- */
+const TERM_START=2026*4+2; /* Terminal Reports are prepared only for projects finishing in Quarter 3, 2026 or later */
+function normalizeTerminal(acts){const g=new Map();
+ acts.forEach(a=>{if(!a.docs||a.proj.no==null)return;const k=a.prog+'\u0001'+a.proj.key;if(!g.has(k))g.set(k,[]);g.get(k).push(a)});
+ g.forEach(list=>{const last=Math.max(...list.map(a=>Math.max(qv(a.t)??-1,qv(a.a)??-1))),cells=list.map(a=>a.docs[2]);
+  list.forEach(a=>a.docs[2]='N/A');
+  if(last<TERM_START)return;
+  const pick=['P','D','S'].map(c=>cells.find(l=>dc(l)===c)).find(Boolean);
+  if(pick)list[list.length-1].docs[2]=pick})}
+function parseSheet(rows,sheet){
+ const R={ind:[],acts:[],crows:[],erows:[],name:'',code:'',progFull:{},sign:null};let sec=null,hdr=0,prog=NOP,proj=null;
+ rows.forEach((r,ri)=>{const a=r[0],b=r[1],sa=typeof a==='string'?a.trim():a;
+  if(typeof sa==='string'){let m;
+   if(/^[A-E]\.\s*/.test(sa)){sec=sa[0];hdr=0;return}
+   if(m=/^(?:College|Department):\s*(.+?)(?:\s*\(([^)]+)\))?(?:\s+-\s+(.+))?$/i.exec(sa)){if(!R.name){R.name=S1(m[1]);R.code=m[2]?S1(m[2]):''}
+    if(m[3]){const pm=/\(([^)]+)\)/.exec(m[3]);if(pm)R.progFull[pm[1]]=S1(m[3])}return}
+   if(/^Prepared by/i.test(sa)){sec=null;const j=rows.findIndex((x,i)=>i>ri&&typeof x[0]==='string'&&x[0].trim());if(j>0)R.sign=[0,3,5].map(c=>[S1(rows[ri][c]),S1(rows[j][c]),S1(rows[j+1]&&rows[j+1][c])]);return}
+   if(/^(Indicator_ ID|No\.|Act\. No\.)$/i.test(sa)&&b){ const hb=S1(b).toLowerCase(); hdr=(sec==='A'&&/performance indicator/.test(hb))||(sec==='B'&&/activity title/.test(hb))||(sec==='C'&&/activity title/.test(hb))||((sec==='D'||sec==='E')&&/activity title/.test(hb))?1:0; return}
+   if(m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*(\d+)\s*(.*)$/i.exec(sa)){prog=S1(m[1]);let rest=m[3].trim();const fm=/\(([^()]*IMPLEMENTATION[^()]*)\)\s*$/i.exec(rest);if(fm)rest=rest.slice(0,fm.index).trim();proj={key:sa,no:+m[2],title:S1(rest),fy:fm?S1(fm[1]):''};return}
+   if(/^PROGRAM\s/i.test(sa)){prog=S1(sa.replace(/^PROGRAM\s+/i,''));proj={key:sa,no:null,title:'',fy:''};return}
+   if(/^(CONSOLIDATED|Extension Services)/i.test(sa))return}
+  if(!hdr||!sec||a==null||typeof b!=='string')return;
+  if(sec==='A'&&S1(b)&&(/^PI-\d+$/i.test(S1(a))||num(a)!=null))R.ind.push({id:/^PI-\d+$/i.test(S1(a))?S1(a):'',n:S1(a),pi:S1(b),src:S1(r[2]),t:num(r[3]),a:num(r[4]),v:num(r[5]),st:S1(r[6]),rem:r[7]==null?'':String(r[7]),u:isPct(S1(b))?'pct':'n'});
+  else if(num(a)==null)return;
+  else if(sec==='B')R.acts.push({prog,proj:proj||{key:'',no:null,title:'',fy:''},n:num(a),title:S1(b),t:S1(r[2]),a:fmtDate(r[3]),s:S1(r[4]),alloc:num(r[5]),util:num(r[6]),rate:num(r[7]),note:typeof r[5]==='string'&&num(r[5])==null?S1(r[5]):'',unote:typeof r[6]==='string'&&num(r[6])==null?S1(r[6]):''});
+  else if(sec==='C')R.crows.push({prog,title:S1(b),docs:[2,3,4,5,6,7].map(i=>r[i]==null?'N/A':S1(r[i]))});
+  else if(sec==='D'||sec==='E')R.erows.push({prog,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(i=>num(r[i])||0),timeliness:[13,14,15,16,17].map(i=>num(r[i])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedReported:num(r[20]),totalFaculty:null})});
+ /* Re-read the Activity Profile (Section D in the current sheet; legacy E supported) from its actual two-row header. This is intentionally independent of the A-E section marker because merged Google Sheet headers can make the marker/header detection unreliable in getDisplayValues(). */
+ const eHeader=rows.findIndex(r=>r.some(c=>/No\.\s*of\s*Faculty\s*Involved/i.test(S1(c)))&&r.some(c=>/No\.\s*of\s*Student\s*Involved/i.test(S1(c)))&&r.some(c=>/Quality\s*(?:and|&)\s*Relevance/i.test(S1(c)))&&r.some(c=>/Timeliness/i.test(S1(c))));
+ if(eHeader>=0){
+   const clean=[]; let ep=NOP;
+   for(let i=eHeader+1;i<rows.length;i++){
+     const r=rows[i]||[], a=r[0], b=r[1], sa=S1(a);
+     if(/^Prepared by/i.test(sa))break;
+     if(/^PROGRAM\s+/i.test(sa)){const m=/^PROGRAM\s+(.+?)\s+[|-]\s+P?PROJECT\s*\d+/i.exec(sa); if(m)ep=S1(m[1]); else ep=S1(sa.replace(/^PROGRAM\s+/i,'')); continue}
+     if(num(a)==null||!S1(b))continue;
+     clean.push({prog:ep,title:S1(b),sdg:S1(r[2]),agenda:S1(r[3]),service:S1(r[4]),location:S1(r[5]),faculty:num(r[6]),students:num(r[7]),quality:[8,9,10,11,12].map(j=>num(r[j])||0),timeliness:[13,14,15,16,17].map(j=>num(r[j])||0),facultyNames:r[18]==null?'':String(r[18]).trim(),lengthTraining:S1(r[19]),weightedReported:num(r[20]),totalFaculty:null});
+   }
+   if(clean.length)R.erows=clean;
+ }
+ const pool={};R.crows.forEach(c=>(pool[c.prog]=pool[c.prog]||[]).push(c));const cnt={};
+ R.acts.forEach(a=>{const p=pool[a.prog]||[],i=cnt[a.prog]=(cnt[a.prog]||0)+1;let c=p[i-1];if(!c||c.used||nt(c.title)!==nt(a.title))c=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(c){c.used=1;a.docs=c.docs}else a.docs=null});
+ /* Attach Activity Profile values primarily by activity title. Program labels in merged rows are not reliable enough to be the primary key in the live Google Sheet payload. */
+ const allE=R.erows.slice(), epool={};R.erows.forEach(e=>(epool[e.prog]=epool[e.prog]||[]).push(e));const ecnt={};
+ R.acts.forEach(a=>{const p=epool[a.prog]||[],i=ecnt[a.prog]=(ecnt[a.prog]||0)+1;let e=p[i-1];if(!e||e.used||nt(e.title)!==nt(a.title))e=p.find(x=>!x.used&&nt(x.title)===nt(a.title));if(!e)e=allE.find(x=>!x.used&&nt(x.title)===nt(a.title));if(e){e.used=1;a.profile=e}});
+/* Live Google Sheet is authoritative for all documentary requirement cells.
+   Do not relocate or normalize Terminal Report values; preserve the exact row/status/date from Section C. */
+ if(!R.code)R.code=sheet.replace(/^REF_/i,'').replace(/_/g,' ');return R}
+function wbRowsFn(wb){return n=>XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:null})}
+function extractRowsMap(wb){const m={};wb.SheetNames.filter(n=>/^(CONSOLIDATED|REF_)/i.test(n)).forEach(n=>m[n]=wbRowsFn(wb)(n));return m}
+function build(sheetNames,rows){const N=sheetNames;
+ const cn=N.find(n=>/^CONSOLIDATED/i.test(n)),C=cn?parseSheet(rows(cn),cn):null,idm={};
+ C&&C.ind.forEach(i=>idm[nt(i.pi)]=i.id);const cols={};
+ N.filter(n=>/^REF_/i.test(n)).forEach(n=>{const P=parseSheet(rows(n),n);P.ind.forEach(i=>{if(!i.id&&idm[nt(i.pi)])i.id=idm[nt(i.pi)]});if(P.acts.length||P.ind.length)cols[P.code]=P});
+ return{cons:C,cols}}
+function buildFromWb(wb){return build(wb.SheetNames,wbRowsFn(wb))}
+function buildFromRowsMap(m){return build(Object.keys(m),n=>m[n])}
+/* ---- 3. FILTERING + 4. CALCULATIONS ---- */
+let DB=null,EMBEDDED_DB=null,st={c:'ALL',p:'ALL',t:'O',per:'__embedded__'};
+function selectedPeriodQuarterValue(){
+ const cur=periodsIndex().find(p=>p.key===st.per);
+ if(!cur||!cur.year||!cur.quarter)return null;
+ const qn=parseInt(String(cur.quarter).replace(/\D/g,''),10);
+ return qn>=1&&qn<=4 ? Number(cur.year)*4+qn-1 : null;
+}
+function activityBelongsToSelectedQuarter(a){
+ const pq=selectedPeriodQuarterValue();
+ if(pq==null)return true;
+ /* Quarterly dashboards are cumulative "as of" reports. Include activities targeted
+    from Q1 up to the selected quarter. For example, Q4 shows Q1 + Q2 + Q3 + Q4,
+    while activities scheduled after the selected quarter remain excluded. */
+ const tq=qv(a&&a.t);
+ return tq==null ? false : tq<=pq;
+}
+function scope(){const codes=Object.keys(DB.cols),cs=st.c==='ALL'?codes:[st.c];let acts=cs.flatMap(c=>DB.cols[c].acts.map(a=>({...a,col:c})));
+ acts=acts.filter(activityBelongsToSelectedQuarter);
+ const level=st.c==='ALL'?'ALL':st.p==='ALL'?'COL':'PROG';if(level==='PROG')acts=acts.filter(a=>a.prog===st.p);
+ return{level,cs,acts,ind:level==='ALL'?(DB.cons?DB.cons.ind:[]):DB.cols[st.c].ind}}
+const sm=(x,k)=>x.reduce((s,a)=>s+a[k],0),ratio=(a,b)=>b?a/b*100:null;
+function M(A){const stat={};A.forEach(a=>stat[a.s]=(stat[a.s]||0)+1);
+ const cmp=A.filter(a=>qv(a.t)!=null&&(a.s==='Implemented'?qv(a.a)!=null:qv(a.t)<asOf)),ot=cmp.filter(a=>a.s==='Implemented'&&qv(a.a)===qv(a.t)).length;
+ const al=A.filter(a=>a.alloc!=null),bu=al.filter(a=>a.util!=null),bb=sm(bu,'alloc'),bt=sm(bu,'util');
+ const cells=A.flatMap(a=>(a.docs||[]).map((l,i)=>({c:dc(l),i}))),k=c=>cells.filter(x=>x.c===c).length,s=k('S'),d=k('D'),p=k('P');
+ const pj=new Map();A.forEach(a=>{if(a.proj.no==null)return;const q=a.col+'|'+a.prog+'|'+a.proj.key;if(!pj.has(q))pj.set(q,[]);pj.get(q).push(a)});
+ return{A,pjn:pj.size,pjc:[...pj.values()].filter(x=>x.every(a=>a.s==='Implemented')).length,n:A.length,stat,im:stat.Implemented||0,fi:stat['For Implementation']||0,cmp:cmp.length,ot,al:al.length,tb:sm(al,'alloc'),tu:sm(A.filter(a=>a.util!=null),'util'),bb,bt,rate:bb?bt/bb*100:null,
+  noAl:A.length-al.length,s,d,p,na:k('N'),ap:s+d+p,due:s+p,cells,behind:A.filter(a=>a.s==='For Implementation'&&qv(a.t)!=null&&qv(a.t)<asOf),noUtil:al.filter(a=>a.util==null),
+  pend:A.filter(a=>(a.docs||[]).some(l=>dc(l)==='P'))}}
+/*ENDCORE*/
+/* ---- 5. UI HELPERS ---- */
+const $=s=>document.querySelector(s),esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pf=x=>x==null?'N/A':Math.round(x)+'%',peso=n=>n==null?'N/A':'₱'+n.toLocaleString('en-PH',{minimumFractionDigits:2,maximumFractionDigits:2}),nv=x=>x==null?'N/A':x;
+const TARGETS={budget:70,schedule:90,submission:95};
+const vsTarget=(val,tgt)=>val==null?'':val>=tgt?`This meets or exceeds the ${tgt}% target.`:`This is below the ${tgt}% target.`;
+const ADVICE={
+ budget:{ok:'Utilization is healthy - continue monitoring disbursement pace so the remaining allocation is absorbed by year end.',bad:'Utilization is trailing the target - review pending disbursements and clear blockers before the fiscal year closes.'},
+ schedule:{ok:'Scheduling discipline is strong - keep using the same coordination process for upcoming activities.',bad:'A meaningful share of activities are slipping from their planned quarter - revisit scheduling assumptions or add buffer time for future activities.'},
+ submission:{ok:'Compliance is on track - keep the current monitoring cadence to sustain this rate.',bad:'A meaningful share of due requirements are late - assign a focal person to chase outstanding submissions this week.'},
+ indicators:{ok:'Most indicators are already met - focus remaining effort on the few that are not to close out the year fully compliant.',bad:'Several indicators remain unmet - prioritize the ones furthest from target first, since they carry the most risk to year-end compliance.'},
+ activities:{ok:'Implementation is progressing well - sustain the current pace for the remaining activities.',bad:'A large share of activities are still pending - confirm resourcing and timelines for the remaining items so the program stays on schedule.'}
+};
+const advice=(val,tgt,kind)=>val==null?'':(val>=tgt?ADVICE[kind].ok:ADVICE[kind].bad);
+const mktip=(...parts)=>parts.filter(Boolean).join('\n');
+const gapTip=(a,t,unit='')=>a==null||t==null?'':(a>=t?`Target of ${t}${unit} is met or exceeded.`:`${+(t-a).toFixed(2)}${unit} short of the ${t}${unit} target.`);
+const actTip=m=>{const oth=Object.entries(m.stat).filter(([k])=>k!=='Implemented'&&k!=='For Implementation').map(([k,v])=>`${v} ${k}`);
+ return mktip(`Activities Implemented: ${m.im} of ${m.n} (${pf(ratio(m.im,m.n))}).`,`${m.fi} still for implementation${oth.length?'; '+oth.join(', '):''}.`,m.behind.length?`${m.behind.length} of the remaining activities already passed their target quarter - confirm a new date or implement them now.`:'None of the remaining activities has passed its target quarter yet.')};
+const projTip=m=>mktip(`Projects Completed: ${m.pjc} of ${m.pjn}.`,'A project counts as completed only when every one of its activities is Implemented.',m.pjn-m.pjc>0?`${m.pjn-m.pjc} project(s) still have at least one pending activity - finish these to close them out.`:'All projects are fully implemented.');
+const fyLabel=()=>'FY '+((periodsIndex().find(p=>p.key===st.per)||{}).year||EMB_Y);
+const stripTags=s=>String(s==null?'':s).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim();
+const card=(ic,l,v,p,s1,customTip='')=>{
+ const tip=esc(customTip||[`${stripTags(l)}: ${stripTags(v)}.`,stripTags(s1)].filter(Boolean).join('\n'));
+ return `<div class="kc" title="${tip}"><div class="kh"><span class="ic">${ic}</span><b>${l}</b></div><div class="kv">${v}</div>${p==null?'':`<div class="pb"><i style="width:${Math.min(p,100)}%"></i></div>`}<div class="ks">${s1}</div></div>`};
+const P=(t,r,b,cl='')=>`<div class="p ${cl}"><h3><span>${t}</span><em>${r||''}</em></h3><div class="b">${b}</div></div>`;
+const L=(t,a)=>P(t,'',`<ul>${a.map(i=>`<li>${i}</li>`).join('')}</ul>`);
+const badge=s=>{const c=s==='MET'||s==='Implemented'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na';return`<span class="bd ${c}">${c==='ok'?'✔ ':c==='am'?'◷ ':''}${esc(s)}</span>`};
+const SC={'Implemented':'#2F8F5B','For Implementation':'#E3A72F','Rescheduled':'#12372F'},PAL=['#2F8F5B','#B4472F','#2F8F5B','#DDEBE3','#E3A72F','#12372F'];
+const dn=(segs,c,l)=>{let a=0;const tot=segs.reduce((s,x)=>s+x[1],0),g=tot?segs.map(([,v,col])=>{const s=a;a+=v/tot*100;return`${col} ${s}% ${a}%`}).join(','):'#ccc 0 100%';
+ const dnTip=esc(segs.map(([n,v])=>`${n}: ${v} of ${tot} (${pf(ratio(v,tot)||0)})`).join('\n'));
+ return`<div class="dr"><div class="dn" style="background:conic-gradient(${g})" title="${dnTip}"><div><b>${c}</b><small>${l}</small></div></div><div class="lg">${segs.map(([n,v,col])=>`<div title="${esc(n)}: ${v} of ${tot} (${pf(ratio(v,tot)||0)})"><i style="background:${col}"></i>${esc(n)}<b>${v} (${pf(ratio(v,tot)||0)})</b></div>`).join('')}</div></div>`};
+const projL=j=>j.no!=null?`PROJECT ${j.no}${j.title?' - '+esc(j.title):''}`:'';
+const progL=(c,p)=>p===NOP?p:esc(DB.cols[c].progFull[p]||p);
+const short=a=>`${a.col} · ${a.prog===NOP?'':a.prog+' · '}${a.proj.no!=null?'P'+a.proj.no+' ':''}Act. ${a.n}`;
+const fullProg=a=>a.prog===NOP?'—':(DB.cols[a.col]&&DB.cols[a.col].progFull[a.prog]||a.prog);
+const programTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(a.prog===NOP)return;const pr=fullProg(a),k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,{pr,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Conducted':'○ Not Yet Conducted'}</span></div><div><b>Program</b> ${esc(x.pr)}</div></div>`).join('')}</div>`:''};
+const projectTipHtml=A=>{const groups=new Map();(A||[]).forEach(a=>{if(!a.proj||a.proj.no==null)return;const pr=fullProg(a),pj=`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`,k=pr+'|'+pj;if(!groups.has(k))groups.set(k,{pr,pj,acts:[]});groups.get(k).acts.push(a)});const rows=[...groups.values()].map(x=>({...x,done:x.acts.length>0&&x.acts.every(a=>a.s==='Implemented')}));return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.done?'✓ Completed':'○ Not Yet Completed'}</span></div><div><b>Program</b> ${esc(x.pr)}</div><div><b>Project</b> ${esc(x.pj)}</div></div>`).join('')}</div>`:''};
+const activityTipHtml=A=>{if(!A||!A.length)return '';return `<div class="act-hover-tip project-status-list">${A.map(a=>{const done=a.s==='Implemented';return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ Implemented':'○ '+esc(a.s||'Not Yet Implemented')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`};
+function activityTimingTipHtml(A){if(!A||!A.length)return '';return `<div class="act-hover-tip project-status-list">${A.map(a=>{const tq=qv(a.t),aq=qv(a.a),implemented=a.s==='Implemented';let status='',done=false;if(implemented&&tq!=null&&aq!=null){if(aq===tq){status='Implemented as Scheduled';done=true}else if(aq<tq){status='Implemented Early';done=true}else{status='Implemented Late';done=false}}else if(implemented){status='Implemented';done=true}else if(tq!=null&&tq<asOf){status='Overdue / Not Yet Implemented';done=false}else{status=a.s||'For Implementation';done=false}return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ ':'○ '}${esc(status)}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div><div><b>Target Implementation</b> ${esc(a.t||'Not reported')}</div><div><b>Actual Implementation</b> ${a.s==='Implemented'?esc(fmtDate(a.a)||'Not reported'):'—'}</div></div>`}).join('')}</div>`};
+const ratingTipHtml=(A,kind)=>{const key=kind==='quality'?'quality':'timeliness',label=kind==='quality'?'Quality':'Timeliness';const rows=(A||[]).map(a=>{const x=a.profile&&Array.isArray(a.profile[key])?a.profile[key]:[];const den=x.reduce((u,v)=>u+(Number(v)||0),0),num=(Number(x[2])||0)+(Number(x[3])||0)+(Number(x[4])||0),rate=den?num/den*100:null;const implemented=a.s==='Implemented';const status=den>0?'Rated':(implemented?'No Rating Reported':'For Implementation');return {a,x,den,rate,status}});return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>{const rated=x.status==='Rated',implemented=x.a.s==='Implemented';return `<div class="act-tip-item project-status-item ${rated?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${rated?'✓ Rated — '+label+': '+pf(x.rate):'○ '+x.status}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div>${rated?`<div><b>Rating breakdown</b> P: ${x.x[0]||0} · F: ${x.x[1]||0} · S: ${x.x[2]||0} · VS: ${x.x[3]||0} · E: ${x.x[4]||0}</div>`:(implemented?'<div><b>Rating</b> Evaluation data not reported.</div>':'')}</div>`}).join('')}</div>`:''};
+
+/* PI-03 weighted beneficiary calculation: Quality & Relevance respondents × training-length weight. */
+function trainingWeight(v){
+ const x=S1(v).toLowerCase().replace(/[–—]/g,'-').replace(/\s+/g,' ').trim();
+ if(!x)return null;
+ if(/^<\s*8\s*hours?/.test(x)||/less than\s*8\s*hours?/.test(x))return 0.5;
+ if(/^8\s*hours?\s*\(\s*one day\s*\)/.test(x)||/^8\s*hours?$/.test(x)||/^1\s*day$/.test(x)||/^one day$/.test(x))return 1;
+ if(/^2\s*days?/.test(x))return 1.25;
+ if(/^(?:3\s*-\s*4|3\s*to\s*4)\s*days?/.test(x))return 1.5;
+ if(/^5\s*days?\s*(?:or|and)\s*more/.test(x)||/^5\+\s*days?/.test(x)||/at least\s*5\s*days?/.test(x))return 2;
+ return null;
+}
+const fmtWeighted=n=>n==null?'N/A':Number.isInteger(+n)?String(+n):(+n).toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+function weightedBeneficiaryRows(A){
+ return (A||[]).map(a=>{
+  const q=a.profile&&Array.isArray(a.profile.quality)?a.profile.quality.map(v=>Number(v)||0):[];
+  const trainees=q.length?q.reduce((u,v)=>u+v,0):0;
+  const length=a.profile?S1(a.profile.lengthTraining):'';
+  const weight=trainingWeight(length);
+  const eligible=a.s==='Implemented'&&trainees>0&&weight!=null;
+  return {a,q,trainees,length,weight,weighted:eligible?trainees*weight:null,eligible};
+ });
+}
+function weightedBeneficiaryTipHtml(A){
+ const cur=periodsIndex().find(p=>p.key===st.per),year=cur&&cur.year?Number(cur.year):EMB_Y;
+ const FY=(A||[]).filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===year});
+ const rows=weightedBeneficiaryRows(FY);if(!rows.length)return '';
+ const total=rows.reduce((u,x)=>u+(x.weighted||0),0);
+ return `<div class="act-hover-tip project-status-list">${rows.map(x=>{const implemented=x.a.s==='Implemented';let status='For Implementation';if(implemented&&!x.trainees)status='No Rating Reported';else if(implemented&&x.trainees&&x.weight==null)status='Length of Training Missing / Unrecognized';else if(x.eligible)status='Weighted: '+fmtWeighted(x.weighted);return `<div class="act-tip-item project-status-item ${x.eligible?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.eligible?'✓ ':'○ '}${esc(status)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div>${implemented?`<div><b>Quality rating breakdown</b> P: ${x.q[0]||0} · F: ${x.q[1]||0} · S: ${x.q[2]||0} · VS: ${x.q[3]||0} · E: ${x.q[4]||0}</div><div><b>Trainees rated</b> ${x.trainees}</div><div><b>Length of Training</b> ${esc(x.length||'Not reported')}</div><div><b>Weight</b> ${x.weight==null?'N/A':x.weight}</div>${x.eligible?`<div><b>Computation</b> ${x.trainees} × ${x.weight} = <b>${fmtWeighted(x.weighted)}</b></div>`:''}`:''}</div>`}).join('')}<div class="act-tip-item project-status-item is-complete"><div><b>Total Weighted Trainees</b> ${fmtWeighted(total)}</div><div class="nt">Formula: trainees who rated Quality & Relevance × weight based on Length of Training.</div></div></div>`;
+}
+function scheduleAdherenceTipHtml(A){
+ const rows=(A||[]).map(a=>{
+  const tq=qv(a.t), aq=qv(a.a), implemented=a.s==='Implemented';
+  let status='Not Yet Due', detail='Excluded from the current schedule-adherence denominator.', met=false, included=false;
+  if(implemented){
+   included=tq!=null&&aq!=null;
+   if(tq!=null&&aq!=null&&aq===tq){status='Implemented as Scheduled';detail='Target quarter matched the actual implementation quarter.';met=true}
+   else if(tq!=null&&aq!=null&&aq<tq){status='Implemented Early';detail='Implemented before the target quarter; counted as Not Met for schedule adherence.'}
+   else if(tq!=null&&aq!=null&&aq>tq){status='Implemented Late';detail='Implemented after the target quarter; counted as Not Met for schedule adherence.'}
+   else{status='Implemented — Date Comparison Unavailable';detail='Target or actual implementation quarter could not be determined.';included=false}
+  }else if(tq!=null&&tq<asOf){status='Overdue / Not Yet Implemented';detail='Target quarter has already passed; counted as Not Met for schedule adherence.';included=true}
+  return {a,status,detail,met,included,tq,aq};
+ });
+ const included=rows.filter(x=>x.included), met=included.filter(x=>x.met).length;
+ const early=rows.filter(x=>x.status==='Implemented Early').length, late=rows.filter(x=>x.status==='Implemented Late').length, overdue=rows.filter(x=>x.status==='Overdue / Not Yet Implemented').length, notDue=rows.filter(x=>x.status==='Not Yet Due').length;
+ return rows.length?`<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.met?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.met?'✓ ':'○ '}${esc(x.status)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Target Implementation</b> ${esc(x.a.t||'Not reported')}</div><div><b>Actual Implementation</b> ${x.a.s==='Implemented'?esc(fmtDate(x.a.a)||'Not reported'):'—'}</div><div><b>Schedule Adherence</b> ${x.met?'MET':x.included?'NOT MET':'Not Yet Included'}</div><div class="nt" style="margin-top:4px">${esc(x.detail)}</div></div>`).join('')}<div class="act-tip-item project-status-item is-complete"><div><b>Schedule Adherence Summary</b> ${met} of ${included.length} due-or-implemented activities met the target quarter (${pf(ratio(met,included.length))}).</div><div style="margin-top:4px"><b>Early</b> ${early} &nbsp;·&nbsp; <b>Late</b> ${late} &nbsp;·&nbsp; <b>Overdue</b> ${overdue} &nbsp;·&nbsp; <b>Not Yet Due</b> ${notDue}</div><div class="nt">Only activities implemented in their target quarter are counted as meeting schedule adherence.</div></div></div>`:'';
+}
+
+const partnerTipHtml=I=>{const row=indFind(I,/partnership/i,/MOU/i,/MOA/i);if(!row)return '';const raw=String(row.rem||'').replace(/\r/g,'').trim();const lines=raw.split(/\n+/).map(x=>x.trim()).filter(Boolean);let vals=lines.filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim());if(!vals.length){vals=raw.split(/;|\|/).map(x=>x.trim()).filter(x=>/^\s*\d+\s*[.)-]\s*\S/.test(x)).map(x=>x.replace(/^\s*\d+\s*[.)-]\s*/,'').trim())}if(!vals.length){vals=lines.filter(x=>!/(?:\b(?:one|two|three|four|five|six|seven|eight|nine|ten)\b\s*\(\d+\)|\b\d+\s*\([^)]*\))[^\n]*(?:MOA|MOU|partnership|target|established)/i.test(x)&&!/(?:target|accomplishment)\s*[:=-]/i.test(x))}const actual=Math.max(0,Math.round(Number(row.a)||0));const classify=(x,i)=>{if(/\b(established|signed|notarized|executed|completed)\b/i.test(x))return 'Established';if(/for\s*sign(?:ing|ature)?|await(?:ing)?\s*sign(?:ing|ature)?|awaiting\s*signature/i.test(x))return 'For Signing';if(/for\s*review\s*\(\s*(?:institution(?:'|’)?s?\s*)?legal\s*\)|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|(?:institution(?:'|’)?s?\s*)?legal\s*(?:office|counsel)?\s*(?:review|evaluation)|review\s*(?:by|of)\s*(?:the\s*)?(?:institution(?:'|’)?s?\s*)?legal/i.test(x))return "For Review (Institution’s Legal)";if(/for\s*review\s*\(\s*(?:partner|partner\s*agency|agency)\s*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|review\s*(?:by|of)\s*(?:the\s*)?(?:partner|partner\s*agency|agency|counterpart)|partner(?:\s*agency)?\s*(?:review|evaluation)/i.test(x))return 'For Review (Partner Agency)';if(/exploratory|exploration|initial\s*(?:discussion|coordination|meeting)|potential\s*partnership|prospective\s*partner/i.test(x))return 'For Exploratory Meeting';return i<actual?'Established':'For Exploratory Meeting'};return vals.length?`<div class="act-hover-tip project-status-list">${vals.map((x,i)=>{const status=classify(x);const done=status==='Established';let agency=x.replace(/\s*\((?:established|signed|notarized|executed|completed|for\s*sign(?:ing|ature)?|for\s*review\s*\([^)]*\)|for\s*(?:partner|partner\s*agency|agency|counterpart)\s*review|for\s*(?:institution(?:'|’)?s?\s*)?legal\s*review|for\s*exploratory(?:\s*meeting)?)\)\s*$/i,'').replace(/\s*[-–—:]\s*(?:Established|For\s*Signing|For\s*Review\s*\([^)]*\)|For\s*Exploratory\s*Meeting)\s*$/i,'').trim();return `<div class="act-tip-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${status}</span></div><div><b>Partnership</b> ${esc(agency)}</div></div>`}).join('')}</div>`:''};
+const sdgListTipHtml=items=>{const ns=[...new Set((items||[]).map(([v])=>sdgNumber(v)).filter(n=>n>=1&&n<=17))].sort((a,b)=>a-b);return ns.length?`<div class="act-hover-tip">${ns.map(n=>`<div class="act-tip-item">SDG ${n} - ${esc(SDG_META[n][0])}</div>`).join('')}</div>`:''};
+const withHoverTip=(html,tipHtml)=>{if(!tipHtml)return html;let marked=html.replace('class="kc"','class="kc has-act-tip"').replace(/ title="[^"]*"/,'');const i=marked.lastIndexOf('</div>');return i<0?marked:marked.slice(0,i)+tipHtml+marked.slice(i)};
+const withActivityTip=(html,A)=>withHoverTip(html,activityTipHtml(A));
+const pv=(i,x)=>x==null?'N/A':i.u==='pct'?pf(x):x,pvar=i=>i.v==null?'N/A':i.u==='pct'?pf(i.v):+i.v.toFixed(2);
+const idl=i=>i.id||'#'+i.n,rol=(I,re)=>I.find(i=>re.test(i.pi));
+const remL=t=>String(t||'').split('\n').map(esc).join('<br>');
+function TvA(I){
+ const valid=I.filter(i=>/^PI-\d+$/i.test(S1(i.id))&&S1(i.pi));
+ const bar=i=>{const r=i.t&&i.a!=null?i.a/i.t:null;return`<div class="tr"><div class="tl"><span><b>${esc(idl(i))}</b> ${esc(i.pi)}</span><b>${r==null?'N/A':(r>1?'▲ ':'')+(i.u==='pct'?`${pf(i.a)} / ${pf(i.t)}`:`${i.a} / ${i.t}`)}</b></div><div class="pb">${r==null?'':`<i class="${r>=1?'g':'a'}" style="width:${Math.min(r*100,100)}%"></i>`}</div></div>`};
+ return valid.sort((a,b)=>(parseInt(a.id.replace(/\D/g,''))||0)-(parseInt(b.id.replace(/\D/g,''))||0)).map(bar).join('')+'<div class="nt">Accomplishment ÷ target, capped at 100%; ▲ = above target; N/A = accomplishment not reported.</div>'
+}
+function tbl(S,n,head,rowFn,prog=true){let h='',lc,lp,lj;S.acts.forEach(a=>{if(S.level==='ALL'&&a.col!==lc){lc=a.col;lp=lj=null;h+=`<tr class="cb"><td colspan="${n}">${esc(lc)} - ${esc(DB.cols[lc].name)}</td></tr>`}
+ const pk=a.col+'|'+a.prog,jk=pk+'|'+a.proj.key;if(pk!==lp){lp=pk;lj=null;if(a.prog!==NOP)h+=`<tr class="pg"><td colspan="${n}">PROGRAM ${esc(a.prog)}${DB.cols[a.col].progFull[a.prog]?' - '+esc(DB.cols[a.col].progFull[a.prog]):''}</td></tr>`}
+ if(jk!==lj){lj=jk;if(a.proj.no!=null)h+=`<tr class="ph"><td colspan="${n}">${projL(a.proj)}<span>${esc(a.proj.fy)}</span></td></tr>`}h+=rowFn(a)});
+ return`<div class="tw"><table><tr>${head.map(x=>`<th>${x}</th>`).join('')}</tr>${h}</table></div>`}
+const cellB=(v,note)=>v!=null?peso(v):`<span class="bd na" title="${esc(note||'Not applicable')}">${note&&!/^No\b/i.test(note)&&note.length>1&&note.length<20?esc(note):'N/A'}</span>`;
+const partnerFunded=a=>a.alloc===0&&a.util===0;
+const partnerBudgetNote='No University budget was allocated; activity expenses were shouldered by the partner.';
+function budgetAllocationTipHtml(A){
+ const rows=(A||[]).map(a=>{
+  const alloc=a.alloc;
+  const funded=alloc!=null&&alloc>0;
+  const zero=alloc===0;
+  const partner=zero&&partnerFunded(a);
+  const status=funded?'University Funded':partner?'Partner-Supported / No University Allocation':zero?'No University Allocation':'Allocation N/A';
+  return {a,alloc,funded,zero,partner,status};
+ });
+ if(!rows.length)return '';
+ const fundedCount=rows.filter(x=>x.funded).length;
+ const total=rows.reduce((sum,x)=>sum+(x.funded?x.alloc:0),0);
+ return `<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.funded?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.funded?'✓ ':'○ '}${esc(x.status)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Budget Allocation</b> ${x.alloc==null?'N/A':peso(x.alloc)}</div>${x.partner?`<div class="nt">${esc(partnerBudgetNote)}</div>`:x.alloc==null&&x.a.note?`<div class="nt">${esc(x.a.note)}</div>`:''}</div>`).join('')}<div class="act-tip-item project-status-item ${fundedCount?'is-complete':'is-pending'}"><div><b>Total University Budget Allocation</b> ${peso(total)}</div><div class="nt">${fundedCount?`${fundedCount} of ${rows.length} activities have University budget allocation.`:'No University-funded allocation reported in the current scope.'}</div></div></div>`;
+}
+function budgetUtilizationTipHtml(A){
+ const acts=A||[];
+ if(!acts.length)return '';
+ const progTotals=new Map();
+ acts.forEach(a=>{
+  const k=a.col+'\u0001'+a.prog;
+  const v=a.alloc!=null&&a.alloc>0?Number(a.alloc):0;
+  progTotals.set(k,(progTotals.get(k)||0)+v);
+ });
+ const rows=acts.map(a=>{
+  const alloc=a.alloc;
+  const util=a.util;
+  const k=a.col+'\u0001'+a.prog;
+  const programTotal=progTotals.get(k)||0;
+  const partner=alloc===0&&util===0;
+  const hasAlloc=alloc!=null&&alloc>0;
+  const hasUtil=util!=null;
+  const actRate=hasAlloc&&hasUtil?util/alloc*100:null;
+  const programShare=programTotal>0&&hasUtil?util/programTotal*100:null;
+  const status=partner?'Partner-Supported / No University Budget':!hasAlloc?(alloc==null?'Allocation N/A':'No University Allocation'):hasUtil?'Utilization Reported':'Utilization Not Reported';
+  return {a,alloc,util,programTotal,partner,hasAlloc,hasUtil,actRate,programShare,status};
+ });
+ const totalAlloc=rows.reduce((u,x)=>u+(x.hasAlloc?Number(x.alloc):0),0);
+ const totalUtil=rows.reduce((u,x)=>u+(x.hasUtil&&x.util>0?Number(x.util):0),0);
+ const overallShare=totalAlloc>0?totalUtil/totalAlloc*100:null;
+ return `<div class="act-hover-tip project-status-list">${rows.map(x=>`<div class="act-tip-item project-status-item ${x.hasAlloc&&x.hasUtil?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${x.hasAlloc&&x.hasUtil?'✓ ':'○ '}${esc(x.status)}</span></div><div><b>Program</b> ${esc(fullProg(x.a))}</div><div><b>Project</b> ${x.a.proj&&x.a.proj.no!=null?esc(`Project ${x.a.proj.no}${x.a.proj.title?' - '+x.a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+x.a.n+' - '+x.a.title)}</div><div><b>Budget Allocation</b> ${x.alloc==null?'N/A':peso(x.alloc)}</div><div><b>Budget Utilized</b> ${x.util==null?'Not reported':peso(x.util)}</div>${x.actRate!=null?`<div><b>Activity Utilization Rate</b> ${pf(x.actRate)}</div>`:''}${x.programShare!=null?`<div><b>Share of Entire Program Budget Utilized</b> ${x.programShare.toFixed(2)}%</div><div class="nt">${peso(x.util)} ÷ ${peso(x.programTotal)} total program allocation</div>`:''}${x.partner?`<div class="nt">${esc(partnerBudgetNote)}</div>`:x.util==null&&x.a.unote?`<div class="nt">${esc(x.a.unote)}</div>`:''}</div>`).join('')}<div class="act-tip-item project-status-item ${totalAlloc>0?'is-complete':'is-pending'}"><div><b>Total University Budget Allocation</b> ${peso(totalAlloc)}</div><div><b>Total Budget Utilized</b> ${peso(totalUtil)}</div><div><b>Utilized Share of Total Allocation</b> ${overallShare==null?'N/A':overallShare.toFixed(2)+'%'}</div><div class="nt">Each activity also shows its utilized amount as a percentage of its program's entire University budget allocation.</div></div></div>`;
+}
+function actRanges(ns){const s=[...new Set(ns)].sort((x,y)=>x-y);if(!s.length)return'';const out=[];let a=s[0],b=s[0];
+ for(let i=1;i<=s.length;i++){if(s[i]===b+1){b=s[i];continue}out.push(a===b?`Activity ${a}`:`Activities ${a}-${b}`);a=b=s[i]}
+ return out.join(', ')}
+function shortFY(s){const m=/QUARTER\s*(\d)/i.exec(s||''),y=/(\d{4})/.exec(s||'');return m?('Q'+m[1]+(y?' '+y[1]:'')):(y?y[1]:'')}
+function groupNote(acts){const g={};acts.forEach(a=>{const k=a.col+'\u0001'+a.prog+'\u0001'+a.proj.key;(g[k]=g[k]||[]).push(a)});
+ const noCounts={};Object.values(g).forEach(list=>{const a0=list[0],ck=a0.col+'\u0001'+a0.prog+'\u0001'+a0.proj.no;noCounts[ck]=(noCounts[ck]||0)+1});
+ const multiCol=new Set(acts.map(a=>a.col)).size>1;
+ return Object.values(g).map(list=>{const a0=list[0],ck=a0.col+'\u0001'+a0.prog+'\u0001'+a0.proj.no,amb=noCounts[ck]>1,fy=amb&&a0.proj.fy?' ('+shortFY(a0.proj.fy)+')':'';
+  const pre=[multiCol?a0.col:null,a0.prog!==NOP?a0.prog:null,a0.proj.no!=null?'P'+a0.proj.no+fy:null].filter(Boolean).join(' ');
+  return(pre?pre+' ':'')+actRanges(list.map(a=>a.n))}).join('; ')}
+function bpanel(m){const notes={};m.A.forEach(a=>{if(a.note)(notes[a.note]=notes[a.note]||[]).push(a)});const nl=Object.entries(notes).sort((x,y)=>y[1].length-x[1].length).slice(0,3),pfA=m.A.filter(partnerFunded);
+ return`<div class="bp"><div><span>Allocated</span><b>${peso(m.al?m.tb:null)}</b></div><div><span>Utilized</span><b>${peso(m.tu||m.bb?m.tu:null)}</b></div><div><span>Utilization rate</span><b>${pf(m.rate)}</b></div></div>${m.rate==null?'':`<div class="pb"><i style="width:${Math.min(m.rate,100)}%"></i></div><div class="nt">Rate = ${peso(m.bt)} / ${peso(m.bb)} (activities with allocation and reported utilization).</div>`}<div class="nt">${m.noAl} of ${m.n} activities have no numeric allocation (N/A) - not counted as ₱0.${m.noUtil.length?` ${m.noUtil.length} allocated activities have no reported utilization.`:''}</div>${pfA.length?`<div class="nt"><b>N/A:</b> ${esc(partnerBudgetNote)} (${esc(groupNote(pfA))})</div>`:''}${nl.map(([t,list])=>`<div class="nt">"${esc(t)}" - ${esc(groupNote(list))}</div>`).join('')}`}
+
+/* ---- EXECUTIVE OVERVIEW HELPERS ---- */
+const rowText=a=>[a.title,a.note,a.unote].filter(Boolean).join(' | ');
+const uniqText=(A,re)=>{const out=new Set();A.forEach(a=>{const txt=rowText(a);let m;const rx=new RegExp(re.source,re.flags.includes('g')?re.flags:re.flags+'g');while((m=rx.exec(txt))){const v=S1(m[1]||m[0]).replace(/^[\s:=-]+|[\s;,.]+$/g,'');if(v)out.add(v);if(!rx.global)break}});return [...out]};
+const indFind=(I,...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
+const indActual=(I,...res)=>{const i=indFind(I,...res);return i&&i.a!=null?i.a:null};
+const indTarget=(I,...res)=>{const i=indFind(I,...res);return i&&i.t!=null?i.t:null};
+const countCompletedPrograms=A=>{const g=new Map();A.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!g.has(k))g.set(k,[]);g.get(k).push(a)});return [...g.values()].filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length};
+const countPrograms=A=>new Set(A.filter(a=>a.prog!==NOP).map(a=>a.col+'|'+a.prog)).size;
+const fieldTokens=(A,kind)=>{const patterns={agenda:[/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig],service:[/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig],sdg:[/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig]};return uniqText(A,patterns[kind][0])};
+function splitSDGs(v){const text=S1(v);if(!text)return[];const hits=[...text.matchAll(/SDG\s*(?:No\.?\s*)?(\d{1,2})(?:\s*[-–:]\s*([^\n,;]+))?/gi)];if(hits.length)return [...new Set(hits.map(m=>'SDG '+(+m[1])+(m[2]?' - '+S1(m[2]):'')))];return text.split(/\n|;|,(?=\s*SDG)/).map(S1).filter(Boolean)}
+function distFromText(A,kind){const g=new Map();A.forEach(a=>{let vals=[];if(a.profile){if(kind==='agenda'&&a.profile.agenda)vals=[a.profile.agenda];if(kind==='service'&&a.profile.service)vals=[a.profile.service];if(kind==='sdg')vals=splitSDGs(a.profile.sdg)}if(!vals.length){const patterns={agenda:/(?:extension\s+agenda|agenda)\s*[:=-]\s*([^|;\n]+)/ig,service:/(?:community\s+service(?:\s+type)?|service\s+type|type)\s*[:=-]\s*([^|;\n]+)/ig,sdg:/(?:sdg|sustainable\s+development\s+goal(?:s)?)\s*[:#=-]*\s*([^|;\n]+)/ig};const txt=rowText(a),rx=new RegExp(patterns[kind].source,patterns[kind].flags);let m;while((m=rx.exec(txt)))vals.push(...(kind==='sdg'?splitSDGs(m[0]):[S1(m[1])]))}vals.map(S1).filter(Boolean).forEach(v=>g.set(v,(g.get(v)||0)+1))});return [...g.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]))}
+function facultyNameList(v){
+ const raw=(v==null?'':String(v)).replace(/\r\n?/g,'\n').trim();
+ if(!raw)return[];
+
+ // Google Sheets may return the multi-select faculty cell as a CSV-like string:
+ // "Surname, Firstname M.","Surname, Firstname M.",...
+ // Extract quoted entries first so the comma inside a person's name is NEVER
+ // mistaken for a separator.
+ const quoted=[];
+ raw.replace(/"([^"]+)"/g,(m,name)=>{name=S1(name);if(name)quoted.push(name);return m;});
+ if(quoted.length)return quoted;
+
+ // Otherwise support actual line breaks, semicolons, pipes and bullets.
+ let parts=raw.split(/\n+|;|\||•|·/).map(x=>S1(x).replace(/^["']|["']$/g,'')).filter(Boolean);
+
+ // Also support flattened values where professional titles mark the next person.
+ const titleStart=/(?=(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s+)/g;
+ parts=parts.flatMap(x=>x.split(titleStart))
+   .map(x=>S1(x).replace(/^[•·\-–—]+\s*/,'').replace(/^["']|["']$/g,''))
+   .filter(Boolean);
+
+ return parts;
+}
+function facultyKey(v){
+ return S1(v).toLowerCase()
+   .replace(/\b(associate professor|assistant professor|dr|prof|assoc|asst|mr|ms|mrs|engr)\.?\b/g,'')
+   .replace(/[^a-z0-9]+/g,' ').trim();
+}
+function facultySortKey(name){
+ const clean=S1(name).replace(/^(?:Dr\.|Assoc\.\s*Prof\.|Asst\.\s*Prof\.|Prof\.|Mr\.|Ms\.|Mrs\.|Engr\.)\s*/i,'');
+ // Current faculty entries use "Surname, Given name"; sorting by this value
+ // therefore sorts correctly by surname. For "Given Surname", use final token.
+ if(clean.includes(','))return clean.toLowerCase();
+ const p=clean.split(/\s+/).filter(Boolean);
+ return ((p[p.length-1]||'')+' '+clean).toLowerCase();
+}
+function facultyStats(A){
+ const people=new Map();
+ (A||[]).forEach(a=>{
+   const p=a.profile;
+   if(!p||!p.facultyNames)return;
+   const seen=new Set();
+   facultyNameList(p.facultyNames).forEach(name=>{
+     const k=facultyKey(name);
+     if(!k||seen.has(k))return;
+     seen.add(k);
+     if(!people.has(k))people.set(k,{name:S1(name),count:0,implemented:0,pending:0,activities:[]});
+     const person=people.get(k);
+     person.count++;
+     const done=/^implemented$/i.test(S1(a.s));
+     if(done)person.implemented++; else person.pending++;
+     person.activities.push(a);
+   });
+ });
+ const actSort=(a,b)=>((a.proj&&a.proj.no!=null?a.proj.no:9999)-(b.proj&&b.proj.no!=null?b.proj.no:9999))||((a.n||0)-(b.n||0))||S1(a.title).localeCompare(S1(b.title));
+ people.forEach(p=>p.activities.sort(actSort));
+ return [...people.values()].sort((a,b)=>facultySortKey(a.name).localeCompare(facultySortKey(b.name)));
+}
+function facultyTipHtml(A){
+ const f=facultyStats(A);if(!f.length)return '<div class="act-hover-tip"><div class="nt">No faculty names reported in the current scope.</div></div>';
+ return `<div class="act-hover-tip project-status-list">${f.map(x=>`<div class="act-tip-item project-status-item ${x.pending?'is-pending':'is-complete'}"><div><b>Faculty</b> ${esc(x.name)}</div><div><b>Activities Involved</b> ${x.count}</div><div><b>Implemented</b> ${x.implemented} &nbsp;·&nbsp; <b>For Implementation</b> ${x.pending}</div><div style="margin-top:10px">${x.activities.map(a=>`<div class="act-tip-item project-status-item ${a.s==='Implemented'?'is-complete':'is-pending'}" style="margin-top:8px"><div class="project-status-head"><span class="project-status-badge">${a.s==='Implemented'?'✓ Implemented':'○ '+esc(a.s||'For Implementation')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`).join('')}</div></div>`).join('')}<div class="nt"><b>${f.length} unique faculty member${f.length===1?'':'s'}</b>. Each faculty member is counted once even when involved in multiple activities.</div></div>`;
+}
+function profileTotals(A){let faculty=0,students=0,q=[0,0,0,0,0],t=[0,0,0,0,0],hasF=false,hasS=false,hasQ=false,hasT=false;A.forEach(a=>{const p=a.profile;if(!p)return;if(p.faculty!=null){faculty+=p.faculty;hasF=true}if(p.students!=null){students+=p.students;hasS=true}p.quality.forEach((v,i)=>{q[i]+=v;if(v)hasQ=true});p.timeliness.forEach((v,i)=>{t[i]+=v;if(v)hasT=true})});const sat=x=>{const den=x.reduce((a,b)=>a+b,0),num=x[2]+x[3]+x[4];return den?{den,num,rate:num/den*100}:null};return{faculty:hasF?faculty:null,students:hasS?students:null,q:hasQ?sat(q):null,t:hasT?sat(t):null}}
+function distPanel(title,items,kind,unit='activities'){if(!items.length)return P(title,'','<div class="nt">No '+esc(title.toLowerCase())+' data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),segs=items.slice(0,6).map((x,i)=>[x[0],x[1],PAL[i%PAL.length]]);let a=0;const g=segs.map(([,v,col])=>{const z=a;a+=v/total*100;return`${col} ${z}% ${a}%`}).join(',');const legend=segs.map(([n,v,col])=>`<div class="chart-click" data-okind="${kind}" data-oval="${esc(n)}" title="Click to show matching activities"><i style="background:${col}"></i>${esc(n)}<b>${v} (${pf(ratio(v,total)||0)})</b></div>`).join('');return P(title,'',`<div class="dist-clean"><div class="dr"><div class="dn" style="background:conic-gradient(${g})"><div><b>${total}</b><small>${unit}</small></div></div><div class="lg">${legend}</div></div></div>`,'chart')}
+function sdgPanel(items){if(!items.length)return P('Activities Contributing to the SDGs','','<div class="nt">No SDG contribution data detected in the current live-sheet fields.</div>','chart');const total=items.reduce((s,x)=>s+x[1],0),mx=Math.max(...items.map(x=>x[1]),1);const rows=items.map(([n,v])=>`<div class="sdgbar-row chart-click" data-okind="sdg" data-oval="${esc(n)}" title="Click to show activities contributing to this SDG"><div class="sdgbar-label">${esc(n)}</div><div class="sdgbar-track"><div class="sdgbar-fill" style="width:${v/mx*100}%"></div></div><div class="sdgbar-value">${v} · ${pf(ratio(v,total)||0)}</div></div>`).join('');return P('Activities Contributing to the SDGs','',`<div class="sdgbar">${rows}</div>`,'chart')}
+const SDG_META={1:['No Poverty','#E5243B'],2:['Zero Hunger','#DDA63A'],3:['Good Health and Well-Being','#4C9F38'],4:['Quality Education','#C5192D'],5:['Gender Equality','#FF3A21'],6:['Clean Water and Sanitation','#26BDE2'],7:['Affordable and Clean Energy','#FCC30B'],8:['Decent Work and Economic Growth','#A21942'],9:['Industry, Innovation and Infrastructure','#FD6925'],10:['Reduced Inequalities','#DD1367'],11:['Sustainable Cities and Communities','#FD9D24'],12:['Responsible Consumption and Production','#BF8B2E'],13:['Climate Action','#3F7E44'],14:['Life Below Water','#0A97D9'],15:['Life on Land','#56C02B'],16:['Peace, Justice and Strong Institutions','#00689D'],17:['Partnerships for the Goals','#19486A']};
+function sdgNumber(v){const m=S1(v).match(/SDG\s*(\d{1,2})/i);return m?+m[1]:null}
+function activitiesBySDGPanel(items,totalActivities,A=[]){const counts={};items.forEach(([label,count])=>{const n=sdgNumber(label);if(n>=1&&n<=17)counts[n]=(counts[n]||0)+Number(count||0)});const normalized=Array.from({length:17},(_,i)=>{const n=i+1,meta=SDG_META[n];return{n,name:meta[0],count:counts[n]||0}});const scopeTotal=Math.max(Number(totalActivities)||0,1);const detailsFor=n=>{const matches=A.filter(a=>a.profile&&splitSDGs(a.profile.sdg).some(v=>sdgNumber(v)===n));return `<div class="sdg-tip">${matches.length?`<div class="sdg-popup-list project-status-list">${matches.map(a=>{const done=a.s==='Implemented';return `<div class="sdg-popup-item project-status-item ${done?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${done?'✓ Implemented':'○ '+esc(a.s||'For Implementation')}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`:'No activities under this SDG in the current scope.'}</div>`};const rows=normalized.map(x=>`<div class="sdg-rank-row"><div class="sdg-goal"><span class="sdg-num">SDG ${x.n} - ${esc(x.name)}</span></div><div class="sdg-rank-track${x.count?' sdg-clickable':''}" data-sdg="${x.n}" data-count="${x.count}" ${x.count?'tabindex="0"':''} aria-label="SDG ${x.n}, ${x.count} activities${x.count?'. Click to view activity details.':''}"><div class="sdg-rank-fill" style="width:${x.count?Math.min(x.count/scopeTotal*100,100):0}%"></div>${detailsFor(x.n)}</div><div class="sdg-rank-value">${x.count} Activit${x.count===1?'y':'ies'}</div></div>`).join('');return P('Activities by Sustainable Development Goal','',`<div class="sdg-rank">${rows}</div><div class="sdg-rank-note">SDG Dashboard displaying all 17 Sustainable Development Goals and the classification of extension activities based on their contribution to each goal. Click a populated bar to view the program, project, and activity details.</div>`,'sdg-rank-panel')}
+function activityMatches(a,kind,val){if(!a||!a.profile)return false;if(kind==='agenda')return S1(a.profile.agenda)===val;if(kind==='service')return S1(a.profile.service)===val;if(kind==='sdg')return splitSDGs(a.profile.sdg).includes(val);return true}
+function activityProfile(A,kind='',val=''){const rows=A.filter(a=>!kind||activityMatches(a,kind,val));const body=rows.map(a=>{const p=a.profile||{};const sdgs=splitSDGs(p.sdg||'').join(', ');return `<tr><td>${esc('Activity '+a.n)}</td><td>${esc(a.title)}</td><td>${esc(p.agenda||'—')}</td><td>${esc(p.service||'—')}</td><td>${esc(sdgs||'—')}</td></tr>`}).join('');const label=kind?`Showing ${rows.length} of ${A.length} activities · Filtered by: ${esc(val)}`:`Showing all ${A.length} activities in the current scope`;return P('Extension Activity Profile','',`<div class="profile-head"><b id="profileFilterLabel">${label}</b><button type="button" id="clearOverviewFilter" ${kind?'':'disabled'}>${kind?'Clear Filter / Show All Activities':'Showing All Activities'}</button></div>${rows.length?`<div class="tw"><table><tr><th>Act. No.</th><th>Activity Title</th><th>Extension Agenda</th><th>Community Service Modality</th><th>SDG</th></tr><tbody id="activityProfileRows">${body}</tbody></table></div>`:`<div class="profile-empty">No activities match this selection.</div>`}`,'activity-profile')}
+function satisfactionFromIndicators(I,kind){const re=kind==='quality'?/(quality\s*(?:and|&)\s*relevance|quality|relevance)/i:/timeliness/i;const rows=I.filter(i=>re.test(i.pi));const vals={P:0,F:0,S:0,VS:0,E:0};let found=false;rows.forEach(i=>{const text=(i.pi+' '+i.rem);for(const k of Object.keys(vals)){const m=new RegExp('(?:^|\\b)'+k+'\\s*[:=-]\\s*(\\d+(?:\\.\\d+)?)','i').exec(text);if(m){vals[k]+=+m[1];found=true}}});if(!found)return null;const den=Object.values(vals).reduce((a,b)=>a+b,0),num=vals.S+vals.VS+vals.E;return{...vals,den,num,rate:den?num/den*100:null}}
+
+/* ---- OVERVIEW (All Colleges / College / Program) ---- */
+function vO(S){
+ const m=M(S.acts),I=S.ind,A=S.acts;
+ const progTotal=countPrograms(A),progDone=countCompletedPrograms(A);
+ const partnerships=indActual(I,/partnership/i,/MOU/i,/MOA/i);
+ const partnershipTarget=indTarget(I,/partnership/i,/MOU/i,/MOA/i);
+ const sdgInd=indActual(I,/SDG/i,/sustainable development/i);
+ const pt=profileTotals(A);
+ /* Faculty numerator: count DISTINCT names from the selected college's Activity
+    Profile list. Do not count a faculty member more than once even when the same
+    person appears in several activities. For a specific program, keep the current
+    scoped activity logic so the numerator reflects that program only. */
+ const facultyPeople=(S.level==='PROG')
+   ? facultyStats(A)
+   : (()=> {
+       const people=new Map();
+       S.cs.forEach(c=>{
+         (DB.cols[c].erows||[]).forEach(r=>{
+           if(!r||!r.facultyNames)return;
+           facultyNameList(r.facultyNames).forEach(name=>{
+             const k=c+'|'+facultyKey(name); // college-qualified distinct key
+             if(!facultyKey(name))return;
+             if(!people.has(k))people.set(k,{name:S1(name)});
+           });
+         });
+       });
+       return [...people.values()];
+     })();
+ const faculty=facultyPeople.length?facultyPeople.length:null;
+ /* Faculty participation must be based only on explicitly reported faculty names and
+    the explicitly reported "Number of Faculty in the College". Never infer or
+    default a faculty count from activity existence or other performance indicators. */
+ const facultyDenoms=S.cs.map(c=>{
+   /* Total faculty is a college-level denominator from the Google Sheet. Read it
+      from ALL Activity Profile rows in that college, not only activities remaining
+      after quarter/program filtering. The sheet repeats the same college total
+      (e.g. CICS = 14), so use the reported positive value. */
+   const vals=(DB.cols[c].erows||[])
+     .map(r=>r&&r.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   /* Build the college denominator from the complete faculty-name list itself.
+      This is the authoritative roster requested for the dashboard (e.g. 14 CICS
+      faculty). */
+   const roster=new Set();
+   (DB.cols[c].erows||[]).forEach(r=>{
+     if(!r||!r.facultyNames)return;
+     facultyNameList(r.facultyNames).forEach(name=>{
+       const k=facultyKey(name);
+       if(k)roster.add(k);
+     });
+   });
+   if(roster.size)return roster.size;
+   if(vals.length)return Math.max(...vals);
+
+   // Backward-compatible fallback for older workbook layouts.
+   const legacy=(DB.cols[c].acts||[])
+     .map(a=>a.profile&&a.profile.totalFaculty)
+     .filter(v=>v!=null&&Number(v)>0)
+     .map(Number);
+   return legacy.length?Math.max(...legacy):null;
+ });
+ const hasFacultyDenom=facultyDenoms.length>0&&facultyDenoms.every(v=>v!=null);
+ const totalFaculty=hasFacultyDenom?facultyDenoms.reduce((a,b)=>a+b,0):null;
+ const facultyPct=(faculty!=null&&totalFaculty!=null&&totalFaculty>0)?faculty/totalFaculty*100:null;
+ const facultyReported=faculty!=null&&totalFaculty!=null;
+ const students=pt.students!=null?pt.students:indActual(I,/student/i);
+ /* Beneficiaries Reached is activity-based, not the Section A cumulative beneficiary PI.
+    Count the trainees who actually rated each IMPLEMENTED activity using the
+    Quality & Relevance response total (P+F+S+VS+E). Restrict the count to the
+    selected fiscal year so prior-year activities (e.g. 2025) never carry into
+    a 2026 quarterly dashboard. The quarter scope is already cumulative through
+    the selected quarter via activityBelongsToSelectedQuarter(). */
+ const curPeriod=periodsIndex().find(p=>p.key===st.per);
+ const selectedYear=curPeriod&&curPeriod.year?Number(curPeriod.year):null;
+ const beneActs=A.filter(a=>{
+   if(a.s!=='Implemented'||!a.profile||!Array.isArray(a.profile.quality))return false;
+   const tq=qv(a.t);
+   return selectedYear==null || (tq!=null && Math.floor(tq/4)===selectedYear);
+ });
+ const bene=beneActs.reduce((sum,a)=>sum+a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0),0);
+ const beneReported=beneActs.some(a=>a.profile.quality.some(v=>(Number(v)||0)>0));
+ const q=pt.q||satisfactionFromIndicators(I,'quality'),t=pt.t||satisfactionFromIndicators(I,'timeliness');
+ const qInd=indFind(I,/quality.*relevance/i,/percentage of trainees/i),tInd=indFind(I,/timeliness/i);
+ const qRate=q?q.rate:(qInd&&qInd.a!=null?qInd.a:null),tRate=t?t.rate:(tInd&&tInd.a!=null?tInd.a:null);
+ const sdgItems=distFromText(A,'sdg'),agendaItems=distFromText(A,'agenda'),serviceItems=distFromText(A,'service');
+ const sdgCount=sdgInd!=null?sdgInd:sdgItems.length;
+ const K=[
+  withHoverTip(card('⚙','Programs Conducted',`${progDone} / ${progTotal}`,ratio(progDone,progTotal),`${progDone} of ${progTotal} approved programs conducted`),programTipHtml(A)),
+  withHoverTip(card('▣','Projects Completed',`${m.pjc} / ${m.pjn}`,ratio(m.pjc,m.pjn),`${m.pjc} of ${m.pjn} approved projects completed`,projTip(m)),projectTipHtml(A)),
+  withHoverTip(card('✔','Activities Implemented',`${m.im} / ${m.n}`,ratio(m.im,m.n),`${m.im} of ${m.n} planned activities implemented`,actTip(m)),activityTipHtml(A)),
+  withHoverTip(card('✎','Partnerships Established',partnerships==null?'N/A':(partnershipTarget!=null?`${partnerships} / ${partnershipTarget}`:partnerships),partnershipTarget?ratio(partnerships,partnershipTarget):null,partnerships==null?'No reported data':(partnershipTarget!=null?`${partnerships} of ${partnershipTarget} target partnership${partnershipTarget===1?'':'s'} established`:`${partnerships} partnership${partnerships===1?'':'s'} established`)),partnerTipHtml(I)),
+  withHoverTip(card('◎','SDGs Addressed',sdgCount!=null?`${sdgCount} / 17`:'N/A',sdgCount!=null?ratio(sdgCount,17):null,sdgCount!=null?`${sdgCount} of 17 Sustainable Development Goals addressed`:'No reported data'),sdgListTipHtml(sdgItems)),
+  withHoverTip(card('●','Faculty Involved',facultyReported?`${faculty} / ${totalFaculty}`:'N/A',facultyPct,facultyReported?`${pf(facultyPct)} of faculty were involved in extension activities`:'No reported data'),facultyTipHtml(A)),
+  card('◆','Students Involved',students==null?'N/A':students,students==null?null:100,students==null?'No reported data':`${students} student${students===1?'':'s'} involved`),
+  withHoverTip(card('◉','Beneficiaries Reached',beneReported?bene:'N/A',beneReported?100:null,beneReported?`${bene} beneficiaries reached through extension activities`:'No trainee ratings reported for implemented activities'),beneActs.length?`<div class="act-hover-tip project-status-list">${beneActs.map(a=>{const n=a.profile.quality.reduce((u,v)=>u+(Number(v)||0),0);return `<div class="act-tip-item project-status-item ${n>0?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${n>0?'✓ '+n+' Beneficiar'+(n===1?'y':'ies'):'○ No Rating Reported'}</span></div><div><b>Program</b> ${esc(fullProg(a))}</div><div><b>Project</b> ${a.proj&&a.proj.no!=null?esc(`Project ${a.proj.no}${a.proj.title?' - '+a.proj.title:''}`):'—'}</div><div><b>Activity</b> ${esc('Activity '+a.n+' - '+a.title)}</div></div>`}).join('')}</div>`:''),
+  withHoverTip(card('★',"Trainees’ Rating (Quality)",qRate==null?'N/A':pf(qRate),qRate,qRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(qRate)}`),ratingTipHtml(A,'quality')),
+  withHoverTip(card('◷',"Trainees’ Rating (Timeliness)",tRate==null?'N/A':pf(tRate),tRate,tRate==null?'No ratings yet':`Target: 97% | Actual: ${pf(tRate)}`),ratingTipHtml(A,'timeliness'))
+ ];
+ return `<div class="k k5">${K.join('')}</div>${activitiesBySDGPanel(sdgItems,A.length,A)}`;
+}
+/* ---- SECTION A ---- */
+function autoPiRows(S){
+ /* PI-02/03/04 are calculated from the activity records, not from manually
+    encoded Section A accomplishments. Targets and PI definitions remain from
+    Section A so the official approved targets are preserved. */
+ const I=S.ind.map(i=>({...i})), A=S.acts;
+ const setResult=(i,a,rem,partial=false)=>{
+  if(!i)return;
+  i.a=a;
+  i.v=(a!=null&&i.t!=null)?a-i.t:null;
+  if(a==null)i.st='N/A';
+  else if(i.t!=null&&a>=i.t)i.st='MET';
+  else if(partial)i.st='Partially MET';
+  else i.st='NOT MET';
+  i.rem=rem||'';
+ };
+ const p2=rol(I,/approved extension programs/i), p3=rol(I,/external beneficiaries/i), p4=rol(I,/^Percentage of trainees/i);
+
+ /* Annual PI rule: calculate PI-02/03/04 only from activities whose schedule
+    belongs to the fiscal year currently selected in the dashboard. This keeps
+    prior/future years out of the annual accomplishment and automatically rolls
+    forward when FY 2027, FY 2028, etc. is selected. */
+ const curPeriod=periodsIndex().find(p=>p.key===st.per);
+ const selectedYear=curPeriod&&curPeriod.year?Number(curPeriod.year):EMB_Y;
+ const AY=A.filter(a=>{const tq=qv(a.t);return tq!=null&&Math.floor(tq/4)===selectedYear});
+
+ /* PI-02: a program is conducted only when every activity scheduled within the
+    selected fiscal year for that approved program is Implemented. */
+ if(p2){
+  const groups=new Map();
+  AY.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(a)});
+  const programs=[...groups.values()], done=programs.filter(x=>x.length&&x.every(a=>a.s==='Implemented')).length;
+  const pending=AY.filter(a=>a.prog!==NOP&&a.s!=='Implemented');
+  let rem='';
+  if(pending.length){
+   rem=`${pending.length} activit${pending.length===1?'y remains':'ies remain'} for implementation in FY ${selectedYear}:\n`+pending.map((a,j)=>`${j+1}. ${a.proj&&a.proj.no!=null?'Project '+a.proj.no+' ':''}Activity ${a.n}`).join('\n');
+  }else if(programs.length){rem=`All planned projects and activities scheduled for FY ${selectedYear} under the approved program(s) were completed/implemented.`}
+  else rem=`No activities scheduled for FY ${selectedYear}.`;
+  setResult(p2,programs.length?done:null,rem,pending.length>0);
+ }
+
+ /* PI-03: weighted external beneficiaries.
+    For each IMPLEMENTED activity in the selected fiscal year:
+      trainees rated = P + F + S + VS + E (Quality & Relevance)
+      weighted trainees = trainees rated × training-length weight.
+    Weight table: <8 hours=.5; 8 hours/one day=1; 2 days=1.25; 3-4 days=1.5; 5+ days=2. */
+ if(p3){
+  const calc=weightedBeneficiaryRows(AY),rows=calc.filter(x=>x.eligible);
+  const total=rows.reduce((u,x)=>u+x.weighted,0);
+  const missing=calc.filter(x=>x.a.s==='Implemented'&&x.trainees>0&&x.weight==null);
+  let rem=rows.length?'Weighted trainee breakdown per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}: ${x.trainees} trainees × ${x.weight} (${x.length}) = ${fmtWeighted(x.weighted)}`).join('\n'):'No implemented activity has both trainee ratings and a recognized Length of Training.';
+  if(missing.length)rem+='\nNot yet included (Length of Training missing/unrecognized):\n'+missing.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}`).join('\n');
+  setResult(p3,rows.length?total:null,rem,rows.length>0);
+ }
+
+ /* PI-04: official satisfaction = (S + VS + E) / all valid Quality & Relevance
+    responses. Aggregate the response counts first, then compute one percentage. */
+ if(p4){
+  const rows=AY.filter(a=>a.s==='Implemented'&&a.profile&&Array.isArray(a.profile.quality)).map(a=>{const x=a.profile.quality.map(v=>Number(v)||0),den=x.reduce((u,v)=>u+v,0),num=x[2]+x[3]+x[4];return{a,den,num,rate:den?num/den*100:null}}).filter(x=>x.den>0);
+  const den=rows.reduce((u,x)=>u+x.den,0), num=rows.reduce((u,x)=>u+x.num,0), rate=den?num/den*100:null;
+  const rem=rows.length?'Trainees rating the training satisfactory or higher per activity:\n'+rows.map((x,j)=>`${j+1}. ${x.a.proj&&x.a.proj.no!=null?'Project '+x.a.proj.no+' ':''}Activity ${x.a.n}-${Math.round(x.rate)}%`).join('\n'):'No Quality & Relevance evaluation responses reported for implemented activities.';
+  setResult(p4,rate,rem,rate!=null);
+ }
+ return I;
+}
+function vA(S){const I=autoPiRows(S),lv=S.level,met=I.filter(i=>i.st==='MET'),gap=I.filter(i=>i.st!=='MET'),over=I.filter(i=>i.a!=null&&i.t!=null&&i.a>i.t);
+ const p2=rol(I,/approved extension programs/i),p3=rol(I,/external beneficiaries/i),p4=rol(I,/^Percentage of trainees/i),bu=rol(I,/^Budget Utilization Rate/i),oth=I.filter(i=>![p2,p3,p4,bu].includes(i)),om=oth.filter(i=>i.st==='MET');
+ const rr=i=>i&&i.a!=null&&i.t?ratio(i.a,i.t):null;
+ const piTip=i=>`<div class="act-hover-tip project-status-list"><div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)} &nbsp; · &nbsp; <b>Variance</b> ${pvar(i)}</div>${i.rem?`<div style="margin-top:6px"><b>Details</b><br>${remL(i.rem)}</div>`:''}</div></div>`;
+ const allPiTip=()=>`<div class="act-hover-tip project-status-list">${I.map(i=>`<div class="act-tip-item project-status-item ${i.st==='MET'?'is-complete':'is-pending'}"><div class="project-status-head"><span class="project-status-badge">${esc(i.st)}</span></div><div><b>${esc(idl(i))}</b> ${esc(i.pi)}</div><div><b>Target</b> ${pv(i,i.t)} &nbsp; · &nbsp; <b>Accomplishment</b> ${pv(i,i.a)}</div></div>`).join('')}</div>`;
+ const pick=(...res)=>I.find(i=>res.some(re=>re.test(i.pi)));
+ const featured=[
+  pick(/faculty members who took the Basic and Advanced Course/i),
+  pick(/external beneficiaries/i),
+  pick(/social innovation projects utilized by the community/i),
+  pick(/faculty members monitored who have completed and implemented the course/i),
+  pick(/conducted technical advisory for industries and other institutions/i)
+ ].filter((x,j,a)=>x&&a.indexOf(x)===j);
+ const excluded=new Set(featured); const fillers=I.filter(i=>!excluded.has(i)&&!/^Percentage of trainees/i.test(i.pi)&&!/Budget Utilization Rate/i.test(i.pi)&&!/approved extension programs/i.test(i.pi)&&!/Memorandum of Understanding|Memorandum of Agreement/i.test(i.pi));
+ while(featured.length<5&&fillers.length)featured.push(fillers.shift());
+ const K0=withHoverTip(card('●','Performance Indicators MET',`${met.length} / ${I.length}`,ratio(met.length,I.length),`${pf(ratio(met.length,I.length))} achieved`),allPiTip());
+ const K1=featured.slice(0,5).map((i,n)=>{const icons=['●','●','●','●','●'];const val=i.a==null?'N/A':pv(i,i.a), prog=i.t!=null&&i.a!=null?ratio(i.a,i.t):null, note=i.t!=null?`${pv(i,i.a)} of ${pv(i,i.t)} target · ${esc(i.st)}`:`${esc(i.st)}`;return withHoverTip(card(icons[n],esc(i.pi),val,prog,note),(i===p3?weightedBeneficiaryTipHtml(S.acts):piTip(i)))}).join('');
+ const K=K0+K1;
+ const statusText=s=>`<span class="bd ${s==='MET'?'ok':/partial|for impl|not yet|resched/i.test(s)?'am':'na'}">${esc(s)}</span>`;
+ const rows=I.map(i=>`<tr><td><b>${esc(idl(i))}</b></td><td>${esc(i.pi)}</td><td class="c">${esc(i.src)}</td><td class="c">${pv(i,i.t)}</td><td class="c">${pv(i,i.a)}</td><td class="c">${pvar(i)}</td><td class="c">${statusText(i.st)}</td><td class="rm">${remL(i.rem)}</td></tr>`).join('');
+ const ins=[`${met.length} of ${I.length} indicators MET; ${gap.length} not yet MET${gap.length?` (${gap.map(i=>esc(idl(i))).join(', ')})`:''}. ${advice(ratio(met.length,I.length),100,'indicators')}`,...gap.map(i=>`${esc(idl(i))} - ${esc(i.st)}: ${pv(i,i.a)} of ${pv(i,i.t)} (variance ${pvar(i)}).`),over.length?`Above target: ${over.map(i=>`${esc(idl(i))} (${pv(i,i.a)} vs ${pv(i,i.t)})`).join('; ')}.`:null,bu?`Budget Utilization Rate indicator: ${pv(bu,bu.a)} vs ${pv(bu,bu.t)} target (${esc(bu.st)}).`:null,I.filter(i=>i.a==null).length?`Accomplishment is unavailable for ${I.filter(i=>i.a==null).map(i=>esc(idl(i))).join(', ')}; shown as N/A.`:null].filter(Boolean);
+ const rem=S.acts.filter(a=>a.s==='For Implementation');
+ const nxt=[...gap.map(i=>i.a==null?`Complete the source data needed for ${esc(idl(i))}.`:`Close the ${esc(idl(i))} gap: ${pvar(i)} against the target of ${pv(i,i.t)}.`),rem.length?`Implement the ${rem.length} remaining activities in scope.`:null,met.length?`Sustain the ${met.length} indicators already MET.`:null].filter(Boolean);
+ return`${lv==='PROG'?'<div class="nt" style="margin:0 0 6px">Performance indicators are reported at college level in the workbook; the selected program does not have its own indicator set.</div>':''}<div class="k" style="grid-template-columns:repeat(3,1fr)">${K}</div><div class="g2">${P('Performance Indicator Details',lv==='ALL'?'all colleges':fyLabel(),`<div class="tw pidbox"><table><tr><th>ID</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th><th>${lv==='ALL'?'Target per Office':'Remarks'}</th></tr>${rows}</table></div>`,'np')}${P('Target vs. Accomplishment','',TvA(I),'tva')}</div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+
+/* ---- SECTION B ---- */
+function vB(S){const m=M(S.acts),n=m.n,schedVal=ratio(m.ot,m.cmp),notOnTime=m.cmp-m.ot,
+ fundedCount=m.A.filter(a=>a.alloc!=null&&a.alloc>0).length,
+ K=withHoverTip(card('✔','Activities Implemented',`${m.im} / ${n}`,ratio(m.im,n)??0,`${pf(ratio(m.im,n))} implemented`,actTip(m)),activityTimingTipHtml(S.acts))+withActivityTip(card('◷','For Implementation',m.fi,ratio(m.fi,n)??0,`${pf(ratio(m.fi,n))} remaining`,mktip(`For Implementation: ${m.fi} activities (${pf(ratio(m.fi,n))} of all activities).`,Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>`${v} more are ${k}.`).join(' '),m.behind.length?`${m.behind.length} already passed their target quarter - these are the priority to implement or reschedule.`:'None has passed its target quarter yet.')),S.acts.filter(a=>a.s==='For Implementation'))
+  +withHoverTip(card('▦','Schedule Adherence',pf(schedVal),schedVal??0,`${m.ot} of ${m.cmp} due-or-implemented activities on target`,mktip(`Schedule Adherence: ${pf(schedVal)}.`,`${m.ot} of ${m.cmp} due-or-implemented activities matched their target quarter exactly.`,'Click to view the schedule status of every activity.')),scheduleAdherenceTipHtml(m.A))+withHoverTip(card('₱','Budget Allocated',m.al?peso(m.tb):'N/A',ratio(fundedCount,n)??0,fundedCount?`${fundedCount} of ${n} activities with University budget allocation`:(m.al?`No University-funded allocation reported`:`No allocation data reported`),mktip(`Budget Allocated: ${m.al?peso(m.tb):'N/A'}.`,fundedCount?`${fundedCount} of ${n} activities have University budget allocation.`:(m.al?'No University-funded allocation reported in the current scope.':'No allocation data reported in the current scope.'),'Click to view the budget allocation breakdown per activity.')),budgetAllocationTipHtml(m.A))+withHoverTip(card('%','Budget Utilization Rate',pf(m.rate),m.rate??0,`${peso(m.bt)} of ${peso(m.bb)}`,mktip(`Budget Utilization Rate: ${pf(m.rate)} (${peso(m.bt)} of ${peso(m.bb)}).`,vsTarget(m.rate,TARGETS.budget),advice(m.rate,TARGETS.budget,'budget'),'Click to view the budget utilization breakdown per activity.')),budgetUtilizationTipHtml(m.A));
+ const rows=a=>{const late=a.s==='For Implementation'&&qv(a.t)!=null&&qv(a.t)<asOf,partner=partnerFunded(a),ua=a.util!=null?peso(a.util):a.unote&&a.unote.length>1?`<span class="bd na">${esc(a.unote)}</span>`:'<span class="bd na">N/A</span>';
+  const cmpOk=a.s==='Implemented'&&qv(a.t)!=null&&qv(a.a)!=null,mismatch=cmpOk&&qv(a.a)!==qv(a.t)?(qv(a.a)<qv(a.t)?'Early':'Delayed'):null;
+  const actCell=a.s==='Implemented'?`<b>${esc(fmtDate(a.a))}</b>`+(mismatch?`<br><span class="bd ${mismatch==='Early'?'am':'rd'}">Not Met - ${mismatch}</span>`:''):a.a&&a.a!==a.t?`<i title="Expected / rescheduled date">↪ <b>${esc(fmtDate(a.a))}</b></i>`:'-';
+  return`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td><td class="c">${esc(a.t)}</td><td class="c">${actCell}</td><td class="c">${badge(a.s)}${late?'<br><span class="bd rd">Not Met - Overdue</span>':''}</td><td class="c">${cellB(a.alloc,a.note)}</td><td class="c">${ua}</td><td class="c">${partner?`<span class="bd na" title="${esc(partnerBudgetNote)}">N/A</span>`:a.util!=null&&a.rate!=null?pf(a.rate):a.rate!=null?`<span title="Official rate; utilization amount not reported">${pf(a.rate)}*</span>`:'<span class="bd na">N/A</span>'}</td></tr>`};
+ const stt=Object.entries(m.stat).map(([k,v],i)=>[k,v,SC[k]||PAL[(i+2)%6]]),ins=[`${m.im} of ${n} activities implemented; ${m.fi} for implementation${m.n-m.im-m.fi?`; ${Object.entries(m.stat).filter(([k])=>!/^(Implemented|For Implementation)$/.test(k)).map(([k,v])=>v+' '+esc(k)).join(', ')}`:''}.`,
+  `Schedule adherence ${pf(schedVal)}: ${m.ot} of ${m.cmp} due-or-implemented activities matched their original target quarter exactly (early, late, or still not implemented past its target quarter all count as Not Met; activities not yet due are excluded). ${vsTarget(schedVal,TARGETS.schedule)} ${advice(schedVal,TARGETS.schedule,'schedule')}`,m.behind.length?`${m.behind.length} for-implementation activities have already passed their target quarter.`:'No for-implementation activity has passed its target quarter.',
+  m.rate!=null?`Budget: ${peso(m.bt)} utilized of ${peso(m.bb)} (${pf(m.rate)}) on activities with reported utilization; total allocation ${peso(m.tb)}. ${vsTarget(m.rate,TARGETS.budget)} ${advice(m.rate,TARGETS.budget,'budget')}`:'No numeric budget utilization recorded.',`${m.noAl} of ${n} activities have no numeric allocation (N/A) - partner-supported or not applicable per workbook notes.`];
+ const nxt=[m.fi?`Implement ${m.fi} remaining activities: ${m.A.filter(a=>a.s==='For Implementation').slice(0,4).map(a=>esc(short(a))+' ('+esc(a.t)+')').join('; ')}${m.fi>4?'…':''}.`:'All activities implemented.',m.behind.length?'Confirm or reschedule activities past their target quarter.':null,m.noUtil.length?`Submit utilization amounts for ${m.noUtil.length} allocated activities.`:null,'Monitor implementation against target dates and submit reports as each activity completes (Section C).'].filter(Boolean);
+ return`<div class="k">${K}</div>
+ <div class="g3" style="margin:8px 0">${P('Implementation Status Distribution','',dn(stt,n,'Activities'),'chart')}${P('Budget Performance','',bpanel(m))}</div>
+ <div style="margin-bottom:8px">${P('College → Program → Project → Activity',fyLabel(),tbl(S,8,['Act. No.','Activity Title','Target Impl. Date','Actual Impl. Date','Status','Budget Allocation','Budget Utilization','Utilization Rate'],rows)+'<div class="nt" style="padding:0 10px 6px">↪ = expected/rescheduled date · Not Met - Early/Delayed = implemented outside its original target quarter · * official rate with no reported utilization amount · <b>N/A for ₱0 allocation + ₱0 utilization:</b> No University budget was allocated; activity expenses were shouldered by the partner.</div>','np')}</div>
+ <div class="g3">${L('Key Highlights',ins)}${L('Next Steps',nxt)}</div>`}
+/* ---- SECTION C ---- */
+const T=['Attendance','Evaluation Report','Terminal Report','Monitoring Tool','Monitoring the Progress','Rescheduling Letters'],DI={S:'',D:'◷ ',P:'⚠ ',N:''},DK={S:'ok',D:'am',P:'rd',N:'na'};
+function docTodo(A,idx){const Dl=A.filter(a=>a.docs&&dc(a.docs[idx])==='D'),Pl=A.filter(a=>a.docs&&dc(a.docs[idx])==='P'),out=[];
+ if(Dl.length)out.push(`Upcoming: ${esc(groupNote(Dl))}`);if(Pl.length)out.push(`⚠ Pending/Overdue: ${esc(groupNote(Pl))}`);return out}
+function terminalTodo(S){const byProj={};S.acts.filter(a=>a.proj.no!=null).forEach(a=>{const k=a.col+'|'+a.prog+'|'+a.proj.key;(byProj[k]=byProj[k]||[]).push(a)});const lines=[];
+ Object.values(byProj).forEach(list=>{if(!list.every(a=>a.s==='Implemented'))return;const needed=list.some(a=>a.docs&&(dc(a.docs[2])==='D'||dc(a.docs[2])==='P'));if(!needed)return;
+  const a0=list[0];lines.push(esc([S.level==='ALL'?a0.col:null,a0.prog!==NOP?a0.prog:null,'P'+a0.proj.no].filter(Boolean).join(' ')))});
+ return lines}
+function monProgs(S,idx){const byProg={};S.acts.forEach(a=>{if(a.prog===NOP)return;const k=a.col+'|'+a.prog;(byProg[k]=byProg[k]||[]).push(a)});const out=[];
+ Object.values(byProg).forEach(list=>{const needed=list.some(a=>a.docs&&(dc(a.docs[idx])==='D'||dc(a.docs[idx])==='P'));if(!needed)return;
+  const a0=list[0];out.push({label:[S.level==='ALL'?a0.col:null,a0.prog].filter(Boolean).join(' '),done:list.every(a=>a.s==='Implemented')})});
+ return out}
+function monitoringTodo(S,idx){const ps=monProgs(S,idx);
+ return [...ps.filter(p=>p.done).map(p=>`\u26a0 ${esc(p.label)} - due this quarter (all activities completed)`),...ps.filter(p=>!p.done).map(p=>esc(p.label))]}
+function todoPanel(S){const A=S.acts,resch=A.filter(a=>a.docs&&dc(a.docs[5])==='P');
+ const block=(title,lines)=>lines.length?`<div class="todo-cat"><b>${esc(title)}</b><div class="todo-lines">${lines.map(l=>`<div>${l}</div>`).join('')}</div></div>`:'';
+ const parts=[block('Attendance - per activity',docTodo(A,0)),block('Evaluation Report - per activity',docTodo(A,1)),
+  block('Terminal Report - per project, due once all its activities are Implemented',terminalTodo(S)),
+  block('Monitoring Tool - per program, semi-annual (Aug-Dec); due now once all its activities are done',monitoringTodo(S,3)),
+  block('Monitoring the Progress - per program, semi-annual (Aug-Dec); due now once all its activities are done',monitoringTodo(S,4)),
+  resch.length?block('Rescheduling Letters - pending/overdue only',[`⚠ ${esc(groupNote(resch))}`]):''].filter(Boolean);
+ return parts.length?parts.join(''):'<div class="nt">Nothing outstanding right now - all applicable requirements are either submitted or not yet due.</div>'}
+function ipcrProjectRatings(S){
+ const byProj={};
+ S.acts.filter(a=>a.proj&&a.proj.no!=null).forEach(a=>{const k=a.col+'|'+a.prog+'|'+a.proj.key;(byProj[k]=byProj[k]||[]).push(a)});
+ const lines=[];
+ Object.values(byProj).sort((A,B)=>(A[0].proj.no||0)-(B[0].proj.no||0)).forEach(list=>{
+  const lastDates=list.map(a=>parseDateLike(a.a)).filter(Boolean),projectLast=lastDates.length?new Date(Math.max(...lastDates.map(d=>d.getTime()))):null;
+  const required=[],delays=[];
+  /* Attendance and Evaluation Report: one for every implemented activity; due from that activity's implementation date. */
+  list.forEach(a=>{if(!parseDateLike(a.a))return;[0,1].forEach(idx=>required.push({a,idx,label:T[idx],cell:(a.docs||[])[idx],due:parseDateLike(a.a)}))});
+  /* Terminal Report: one per applicable project, based on the last implementation date. */
+  const term=list.map(a=>({a,cell:(a.docs||[])[2]})).find(x=>x.cell&&dc(x.cell)!=='N');
+  if(term&&projectLast)required.push({a:term.a,idx:2,label:T[2],cell:term.cell,due:projectLast});
+  /* Monitoring reports: semi-annual; July 3 and January 3 are the fixed deadlines. Count each type once per project when applicable in its rows. */
+  [3,4].forEach(idx=>{const x=list.map(a=>({a,cell:(a.docs||[])[idx]})).find(x=>x.cell&&dc(x.cell)!=='N');if(x){const ref=parseDateLike(x.a.a)||projectLast;required.push({a:x.a,idx,label:T[idx],cell:x.cell,due:semiAnnualDeadline(ref)})}});
+  if(!required.length)return;
+  const waiting=required.filter(r=>dc(r.cell)!=='S');
+  if(waiting.length){
+   const names=[...new Set(waiting.map(r=>r.label))];
+   lines.push(`<div class="ipcr-row"><div class="ipcr-badge pending">—</div><div class="ipcr-main"><div class="ipcr-project">Project ${esc(list[0].proj.no)} · Pending</div><div class="ipcr-desc">Waiting for ${esc(names.join(', '))} before final IPCR timeliness rating.</div></div></div>`);
+   return;
+  }
+  required.forEach(r=>{const sd=submittedDate(r.cell);if(sd&&r.due)delays.push(daysLate(r.due,sd))});
+  if(delays.length!==required.length){lines.push(`<div class="ipcr-row"><div class="ipcr-badge pending">—</div><div class="ipcr-main"><div class="ipcr-project">Project ${esc(list[0].proj.no)} · Pending</div><div class="ipcr-desc">Waiting for complete submission dates before final IPCR timeliness rating.</div></div></div>`);return}
+  const avg=delays.reduce((x,y)=>x+y,0)/delays.length,sc=timeScore(avg);
+  lines.push(`<div class="ipcr-row"><div class="ipcr-badge">${sc.t}</div><div class="ipcr-main"><div class="ipcr-project">Project ${esc(list[0].proj.no)}</div><div class="ipcr-desc">Average timeliness: ${avg.toFixed(1)} day${Math.abs(avg-1)<.05?'':'s'} after applicable deadline.</div></div></div>`);
+ });
+ if(!lines.length)return '<div class="nt">No applicable project timeliness rating yet.</div>';
+ return `<div class="ipcr-list">${lines.join('')}</div>`;
+}
+function vC(S){const m=M(S.acts),ty=(i,c)=>m.cells.filter(x=>x.i===i&&x.c===c).length,{s,d,p,na,ap,due}=m;
+ const K=card('◔','On-Time Submission Rate',due?pf(ratio(s,due)):'N/A',due?ratio(s,due):null,`${s} of ${due} currently due requirements submitted`,due?mktip(`On-Time Submission Rate: ${pf(ratio(s,due))}.`,`${s} of ${due} currently due requirements submitted.`,vsTarget(ratio(s,due),TARGETS.submission),advice(ratio(s,due),TARGETS.submission,'submission')):'On-Time Submission Rate: N/A.\nNo requirements are currently due.')+card('▤','Documents Submitted',s,ratio(s,ap),`${s} of ${ap} applicable requirements`,mktip(`Documents Submitted: ${s} of ${ap} applicable requirements (${pf(ratio(s,ap))}).`,`${na} N/A requirements are excluded from this count.`,`${d} more are not yet due and ${p} are pending/overdue.`))+card('⚠','Pending / Overdue Requirements',p,ratio(p,ap),p?`${p} outstanding`:'None outstanding',mktip(`Pending / Overdue Requirements: ${p}.`,p?`These were already due but are still outstanding, across ${m.pend.length} activities.`:'Nothing is outstanding right now.',p?'Clear these first - they directly lower the On-Time Submission Rate.':'Keep watching deadlines so none slip into overdue.'))+card('▦','Upcoming (Not Yet Due)',d,ratio(d,ap),`${d} of ${ap} applicable requirements`,mktip(`Upcoming (Not Yet Due): ${d}.`,`${d} of ${ap} applicable requirements have not reached their deadline yet.`,'They are not counted against the On-Time Submission Rate; prepare them ahead of the deadline so they do not become overdue.'));
+ const projLast=a=>{const ds=S.acts.filter(x=>x.col===a.col&&x.prog===a.prog&&x.proj&&a.proj&&x.proj.key===a.proj.key).map(x=>parseDateLike(x.a)).filter(Boolean);return ds.length?new Date(Math.max(...ds.map(d=>d.getTime()))):null};
+ const rows=a=>`<tr><td class="c">${a.n}</td><td>${esc(a.title)}</td>${(a.docs||T.map(()=>'N/A')).map((l,idx)=>{const c=dc(l),tip=c==='S'?docTip(a,l,idx,projLast(a)):'';return`<td class="c ${DK[c]}${tip?' has-doc-tip':''}">${DI[c]}${esc(/^submitted/i.test(l)?'Submitted':l)}${tip?`<div class="doc-tip">${tip}</div>`:''}</td>`}).join('')}</tr>`;
+ const mx=Math.max(1,...T.flatMap((_,i)=>['S','D','P'].map(c=>ty(i,c)))),cc=[['S','#2F8F5B'],['D','#DDEBE3'],['P','#B4472F']];
+ const bc=`<div style="display:flex;gap:12px;font-size:10px;margin-bottom:4px"><span><i class="sw" style="background:#2F8F5B"></i>Submitted</span><span><i class="sw" style="background:#DDEBE3"></i>Not Yet Due</span><span><i class="sw" style="background:#B4472F"></i>Pending / Overdue</span></div><div class="bc">${T.map((t,i)=>`<div><div class="bars">${cc.map(([c,co])=>{const lab=c==='S'?'Submitted':c==='D'?'Not Yet Due':'Pending / Overdue';return`<i style="height:${ty(i,c)/mx*100}%;background:${co}" title="${esc(t)} - ${lab}: ${ty(i,c)}"><b>${ty(i,c)}</b></i>`}).join('')}</div><span class="lbl">${t}</span></div>`).join('')}</div>`;
+ const pu=[...new Set(m.pend.map(a=>a.col+(a.prog===NOP?'':' · '+a.prog)))],nyd=m.A.filter(a=>(a.docs||[]).some(l=>dc(l)==='D')).length;
+ const ins=[`On-time submission rate ${due?pf(ratio(s,due)):'N/A'}: ${s} of ${due} currently due requirements submitted.`,`${s} of ${ap} applicable requirements (${pf(ratio(s,ap))}) submitted.`,`${d} requirements (${pf(ratio(d,ap))}) not yet due, across ${nyd} activities.`,p?`${p} requirements pending/overdue across ${m.pend.length} activities${pu.length?' ('+esc(pu.join(', '))+')':''}.`:'No pending or overdue requirements.',`${na} N/A requirements excluded from all computations.`];
+ const dueNow=[...new Set([...monProgs(S,3),...monProgs(S,4)].filter(p=>p.done).map(p=>p.label))],tI=T.indexOf('Terminal Report'),nxt=[p?`Clear the ${p} pending/overdue requirements first${pu.length?': '+esc(pu.join(', ')):''}.`:null,`Track ${d} not-yet-due requirements as their activities are implemented.`,`Ensure ${ty(tI,'D')+ty(tI,'P')} outstanding terminal reports are submitted upon completion.`,dueNow.length?`Submit the Monitoring Tool and Monitoring the Progress this quarter for programs whose activities are all completed: ${esc(dueNow.join(', '))}.`:null,'Validate submissions against deadlines and keep the monitoring log current.'].filter(Boolean);
+ return`<div class="k">${K}</div><div class="g2" style="align-items:stretch">${P('Status of Report and Documentary Requirements',fyLabel(),tbl(S,8,['Act. No.','Activity Title',...T],rows)+'<div class="nt docnote" style="padding:0 10px 6px">Terminal Report: one per project, shown on the project\'s last activity, and required only for projects finishing in Quarter 3, 2026 or later.</div>','np docreq')}<div class="col">${P('Document Status Distribution','',dn([['Submitted',s,'#2F8F5B'],['Not Yet Due',d,'#DDEBE3'],['Pending / Overdue',p,'#B4472F']],ap,'Documents'),'chart')}${P('IPCR Timeliness Rating per Project','',ipcrProjectRatings(S),'ipcrbox')}${P('To Do List','',todoPanel(S),'todobox')}</div></div><div class="g3">${L('Key Insights',ins)}${L('Next Steps',nxt)}</div>`}
+/* ---- 6. RENDER / EVENTS ---- */
+function fillFilters(){let cs=Object.entries(DB.cols);if(AUTH_USER&&!authCanSeeAll()){const k=authCollegeKey();cs=k&&DB.cols[k]?[[k,DB.cols[k]]]:[];if(k){st.c=k;st.p='ALL'}}$('#col').innerHTML=(AUTH_USER&&authCanSeeAll()?'<option value="ALL">All Colleges</option>':'')+cs.map(([k,c])=>`<option value="${esc(k)}">${esc(k)} - ${esc(c.name)}</option>`).join('');if(AUTH_USER&&!authCanSeeAll())$('#col').disabled=true;else $('#col').disabled=false;$('#col').value=st.c;
+ const ps=st.c==='ALL'?[]:[...new Set(DB.cols[st.c].acts.map(a=>a.prog))];$('#prog').innerHTML='<option value="ALL">All Programs</option>'+ps.map(p=>`<option value="${esc(p)}">${esc(p)}${DB.cols[st.c].progFull[p]?' - '+esc(DB.cols[st.c].progFull[p]):''}</option>`).join('');$('#prog').value=st.p;$('#prog').disabled=st.c==='ALL'}
+function render(){const S=scope();$('#view').textContent=S.level==='ALL'?'All Colleges - All Extension Programs':S.level==='COL'?`${DB.cols[st.c].name} - All Programs`:`${DB.cols[st.c].name} - ${DB.cols[st.c].progFull[st.p]||st.p}`;
+ $('.tabs button[data-t=O]').textContent=S.level==='ALL'?'General Overview':S.level==='COL'?'College Overview':'Program Overview';
+ $('#vO').innerHTML=vO(S);$('#vA').innerHTML=vA(S);$('#vB').innerHTML=vB(S);$('#vC').innerHTML=vC(S);
+ document.querySelectorAll('.v').forEach(v=>v.classList.toggle('on',v.id==='v'+st.t));document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===st.t));
+}
+/* ---- Multi-period storage (per-browser, via localStorage): fixed Q1-Q4 per Year; latest upload for a quarter always wins ---- */
+const LS_IDX='ext_periods_index',LS_ROWS=k=>'ext_period_rows_'+k; let EMB_Y=2026,EMB_Q='Q3';
+const QORD=['Q1','Q2','Q3','Q4'],qrank=q=>{const i=QORD.indexOf(q);return i<0?99:i};
+function lsGet(k){try{const v=localStorage.getItem(k);return v==null?null:JSON.parse(v)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){return false}}
+function rawStored(){return lsGet(LS_IDX)||[]}
+let sharedPeriods=[];
+function periodsIndex(){
+ const emb={key:'__embedded__',year:EMB_Y,quarter:EMB_Q,label:`FY ${EMB_Y} ${EMB_Q} - Initial Data`,savedAt:0,embedded:true};
+ const hasSharedEmbedded=sharedPeriods.some(p=>p.year===EMB_Y&&p.quarter===EMB_Q);
+ return hasSharedEmbedded?[...sharedPeriods]:[emb,...sharedPeriods];
+}
+function applyPeriod(){
+ const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)||idx[0];
+ if(!cur)return;
+ st.per=cur.key;
+ if(cur.key==='__embedded__') DB=EMBEDDED_DB;
+ $('#src').textContent=cur.label;
+ $('#delp').disabled=cur.key==='__embedded__';
+ if(!(st.c==='ALL'||DB.cols[st.c]))st.c='ALL';
+ if(st.c==='ALL')st.p='ALL';else if(!DB.cols[st.c].acts.some(a=>a.prog===st.p))st.p='ALL';
+}
+async function refreshSharedPeriods(){
+ const latestByPeriod=new Map();
+ try{
+  const {data:root,error:rootErr}=await supabaseClient.storage.from('extension-workbooks').list('',{limit:100});
+  if(rootErr)throw rootErr;
+  const years=(root||[]).map(x=>x.name).filter(n=>/^\d{4}$/.test(n));
+  for(const y of years){
+   const {data,error}=await supabaseClient.storage.from('extension-workbooks').list(y,{limit:1000,sortBy:{column:'created_at',order:'desc'}});
+   if(error)continue;
+   (data||[]).forEach(file=>{
+    const m=file.name.match(/^(Q[1-4])(?:_(\d+))?\.xlsx$/i);if(!m)return;
+    const q=m[1].toUpperCase(),year=+y,key=`${year}-${q}`;
+    const stamp=+(m[2]||0),created=file.created_at?Date.parse(file.created_at):0,rank=Math.max(stamp,created||0);
+    const prev=latestByPeriod.get(key);
+    if(!prev||rank>prev.rank)latestByPeriod.set(key,{key:`shared-${year}-${q}`,year,quarter:q,label:`FY ${year} ${q}`,shared:true,path:`${y}/${file.name}`,rank});
+   });
+  }
+ }catch(e){console.error('Could not discover shared workbooks:',e)}
+ sharedPeriods=[...latestByPeriod.values()].sort((a,b)=>a.year-b.year||qrank(a.quarter)-qrank(b.quarter));
+ return sharedPeriods;
+}
+async function fillPeriods(){
+ const idx=periodsIndex(),cur=idx.find(p=>p.key===st.per)||idx[0];if(!cur)return;
+ const years=[...new Set(idx.map(p=>p.year))].sort((a,b)=>a-b);
+ $('#yr').innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join('');$('#yr').value=cur.year;
+ const byQ={};idx.filter(p=>p.year===cur.year).forEach(p=>byQ[p.quarter]=p);
+ const qlabel=q=>'Quarter '+q.slice(1);
+ $('#qr').innerHTML=QORD.map(q=>byQ[q]?`<option value="${esc(byQ[q].key)}">${qlabel(q)}</option>`:`<option value="" disabled>${qlabel(q)} – no data yet</option>`).join('');
+ $('#qr').value=cur.key;
+}
+async function pickYear(y){
+ const idx=periodsIndex(),avail=idx.filter(p=>p.year===y).sort((a,b)=>qrank(a.quarter)-qrank(b.quarter));if(!avail.length)return;
+ const keepQ=(idx.find(p=>p.key===st.per)||{}).quarter,chosen=avail.find(p=>p.quarter===keepQ)||avail[avail.length-1];
+ st.per=chosen.key;await fillPeriods();
+ if(chosen.shared)await loadSharedWorkbook(chosen.year,chosen.quarter,chosen.path);else{applyPeriod();fillFilters();render()}
+}
+let pendingWb=null,pendingName=null,pendingFile=null;
+function msg(t){$('#amsg').textContent=t}
+function closeAddbox(){pendingWb=null;pendingName=null;pendingFile=null;$('#addbox').style.display='none';msg('');$('#asave').dataset.armed='';$('#asave').textContent='Save'}
+function openAddbox(wb,name){pendingWb=wb;pendingName=name;$('#ay').value=new Date().getFullYear();$('#aq').value='Q4';msg('');$('#asave').dataset.armed='';$('#asave').textContent='Save';$('#addfields').style.display=wb?'contents':'none';$('#addbox').style.display='flex'}
+async function savePending(){if(!pendingWb||!pendingFile)return;
+ const year=parseInt($('#ay').value,10),quarter=$('#aq').value;if(!year||year<2000||year>2100){msg('Please enter a valid 4-digit year.');return}
+ const match=periodsIndex().find(p=>p.year===year&&p.quarter===quarter);
+ if(match&&$('#asave').dataset.armed!=='1'){$('#asave').dataset.armed='1';$('#asave').textContent='Click Save again to replace';msg(`FY ${year} ${quarter} already has data. Saving again will replace the shared workbook for all devices.`);return}
+ const storagePath=`${year}/${quarter}_${Date.now()}.xlsx`;msg('Uploading shared workbook...');
+ const {error}=await supabaseClient.storage.from('extension-workbooks').upload(storagePath,pendingFile,{contentType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',upsert:true,cacheControl:'0'});
+ if(error){console.error(error);msg('Could not upload workbook to shared storage: '+error.message);return}
+ await refreshSharedPeriods();st.per=`shared-${year}-${quarter}`;st.c='ALL';st.p='ALL';
+ const saved=sharedPeriods.find(p=>p.year===year&&p.quarter===quarter);const ok=await loadSharedWorkbook(year,quarter,saved?.path);if(ok){await fillPeriods();closeAddbox()}else msg('Uploaded, but the shared workbook could not be reloaded. Please refresh.');
+}
+$('#col').onchange=e=>{st.c=e.target.value;st.p='ALL';fillFilters();render()};
+$('#prog').onchange=e=>{st.p=e.target.value;render()};
+$('#yr').onchange=e=>pickYear(+e.target.value);
+$('#qr').onchange=async e=>{if(!e.target.value)return;const selected=periodsIndex().find(p=>p.key===e.target.value);if(selected&&selected.live){loadLiveYear(selected.year,selected.quarter);return}st.per=e.target.value;if(selected&&selected.shared)await loadSharedWorkbook(selected.year,selected.quarter,selected.path);else{applyPeriod();fillFilters();render()}};
+$('#delp').onclick=async()=>{const cur=periodsIndex().find(p=>p.key===st.per);if(!cur||!cur.shared)return;
+ if($('#delp').dataset.armed!=='1'){$('#delp').dataset.armed='1';$('#delp').textContent='Confirm?';clearTimeout(window.__delTimer);window.__delTimer=setTimeout(()=>{$('#delp').dataset.armed='';$('#delp').textContent='✕'},4000);return}
+ $('#delp').dataset.armed='';$('#delp').textContent='✕';
+ const {data:files,error:listErr}=await supabaseClient.storage.from('extension-workbooks').list(String(cur.year),{limit:1000});if(listErr){alert('Could not list shared workbooks: '+listErr.message);return} const paths=(files||[]).filter(f=>new RegExp('^'+cur.quarter+'(?:_\\d+)?\\.xlsx$','i').test(f.name)).map(f=>`${cur.year}/${f.name}`); if(paths.length){const {error}=await supabaseClient.storage.from('extension-workbooks').remove(paths);if(error){alert('Could not remove shared workbook: '+error.message);return}}
+ await refreshSharedPeriods();st.per=periodsIndex()[0]?.key||'__embedded__';await fillPeriods();const next=periodsIndex().find(p=>p.key===st.per);if(next?.shared)await loadSharedWorkbook(next.year,next.quarter,next.path);else{applyPeriod();fillFilters();render()}
+};
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{st.t=b.dataset.t;render()});
+$('#fx').onchange=e=>{const f=e.target.files[0];if(!f)return;pendingFile=f;const r=new FileReader();
+ r.onerror=()=>{openAddbox(null,f.name);msg('Could not read the file from this browser. Please try again.')};
+ r.onload=x=>{try{const wb=XLSX.read(x.target.result,{type:'array'}),test=buildFromWb(wb);
+   if(!Object.keys(test.cols).length){openAddbox(null,f.name);msg('No REF_* college sheets were found in "'+f.name+'". The workbook was not added.');return}
+   openAddbox(wb,f.name)
+  }catch(err){openAddbox(null,f.name);msg('Could not read workbook: '+err.message)}};
+ r.readAsArrayBuffer(f);e.target.value=''};
+$('#asave').onclick=savePending;
+$('#acancel').onclick=closeAddbox;
+// Supabase connection
+const SUPABASE_URL = 'https://sjnumqwmythybdibcfgu.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_KdH76pSFiRcyXqZMPXNXow_yCCJnFnS';
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+ // Supabase authentication test
+async function loginToSupabase() {
+  const email = prompt('Enter administrator email:');
+  if (!email) return;
+
+  const password = prompt('Enter password:');
+  if (!password) return;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    alert('Login failed: ' + error.message);
+    console.error(error);
+    return;
+  }
+
+  alert('Login successful!');
+  console.log('Supabase user:', data.user);
+}
+
+ document.getElementById('adminLogin').onclick = async () => {
+  await loginToSupabase();
+
+  const { data } = await supabaseClient.auth.getSession();
+
+  if (data.session) {
+    document.getElementById('adminLogin').style.display = 'none';
+    document.getElementById('adminUpload').style.display = 'inline-block';
+  }
+};
+ // Load shared quarterly workbook from Supabase
+async function loadSharedWorkbook(year, quarter, exactPath=null) {
+ try{
+  const storagePath=exactPath||`${year}/${quarter}.xlsx`;
+  const {data,error}=await supabaseClient.storage.from('extension-workbooks').download(storagePath);
+  if(error){console.log('No shared workbook found:',error.message);return false}
+  const wb=XLSX.read(await data.arrayBuffer(),{type:'array'}),test=buildFromWb(wb);
+  if(!Object.keys(test.cols).length){console.error('Shared workbook contains no REF_* college sheets.');return false}
+  DB=test;st.per=`shared-${year}-${quarter}`;st.c='ALL';st.p='ALL';
+  $('#src').textContent=`FY ${year} ${quarter}`;$('#delp').disabled=false;
+  await fillPeriods();fillFilters();
+render();
+  console.log(`Loaded shared workbook: ${storagePath}`);return true;
+ }catch(err){console.error('Shared workbook loading failed:',err);return false}
+}
+ 
+(async () => {
+  const GOOGLE_SHEET_API = 'https://script.google.com/macros/s/AKfycbycWdulSvWlGksfgVQEAnQgnCvt3vCIUfGuDMXmbg4zR6uZdzZFy0dRxVR5er2CwKa5/exec';
+  const statusEl=document.getElementById('liveStatus'), srcEl=document.getElementById('src');
+  let livePayload=null, liveYears=[];
+
+  function yearMaps(payload){
+    const sheets=payload.sheets||{}; const out={};
+    Object.entries(sheets).forEach(([name,rows])=>{
+      const m=name.match(/_(20\d{2})$/); if(!m)return;
+      const y=+m[1]; if(!out[y])out[y]={};
+      out[y][name.replace(/_20\d{2}$/,'')]=rows;
+    });
+    // Backward-compatible sheets without a year suffix
+    if(!Object.keys(out).length){
+      let y=new Date().getFullYear();
+      for(const rows of Object.values(sheets)) for(const r of rows) for(const cell of r){
+        const m=String(cell||'').match(/FY\s*(20\d{2})/i); if(m){y=+m[1];break}
+      }
+      out[y]=sheets;
+    }
+    return out;
+  }
+  function detectQuarter(rowsMap){
+    let best=1;
+    for(const rows of Object.values(rowsMap)) for(const r of rows) for(const cell of r){
+      const text=String(cell||'');
+      let m=text.match(/Quarter\s*([1-4])/i)||text.match(/Q([1-4])\s*,?\s*20\d{2}/i);
+      if(m)best=Math.max(best,+m[1]);
+    }
+    return 'Q'+best;
+  }
+  /* Quarterly snapshots in CONSOLIDATED_PERFORMANCE are stored vertically using
+     Year + Quarter + Indicator_ID. Discover the available snapshots for the selected year. */
+  function quarterTagFromRow(row){
+    for(const cell of (row||[])){
+      const m=S1(cell).match(/Extension\s+Services\s*-\s*Quarter\s*([1-4])\s*FY\s*(20\d{2})/i);
+      if(m)return {quarter:'Q'+m[1],year:+m[2]};
+    }
+    return null;
+  }
+  /* Discover the quarterly blocks that are actually present in the Google Sheet.
+     REF_* sheets are authoritative for block availability; the consolidated snapshot
+     table is also checked for backward compatibility. */
+  function liveQuartersForYear(rowsMap,year){
+    const set=new Set();
+    for(const [name,rows] of Object.entries(rowsMap||{})){
+      if(/^REF_/i.test(name)){
+        for(const r of rows||[]){
+          const tag=quarterTagFromRow(r);
+          if(tag&&tag.year===+year)set.add(tag.quarter);
+        }
+      }
+      if(/^CONSOLIDATED/i.test(name)){
+        let h=-1,yi=-1,qi=-1,ii=-1;
+        for(let x=0;x<(rows||[]).length;x++){
+          const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+          yi=z.indexOf('year'); qi=z.indexOf('quarter');
+          ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+          if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+        }
+        if(h>=0)for(let x=h+1;x<rows.length;x++){
+          const r=rows[x]||[], y=+r[yi], q=S1(r[qi]).toUpperCase();
+          if(y===+year&&/^Q[1-4]$/.test(q)&&/^PI-\d+/i.test(S1(r[ii])))set.add(q);
+        }
+      }
+    }
+    return QORD.filter(q=>set.has(q));
+  }
+  /* Keep ONLY the requested quarter's repeated report blocks in every REF_* sheet.
+     This prevents a later Q4 block from being parsed into Q3 (and vice versa) across
+     Sections A, B, C and D, including SDG/activity-profile fields. */
+  function selectRefQuarterBlocks(rows,year,quarter){
+    const out=[]; let active=false, sawTaggedBlock=false;
+    for(const r0 of rows||[]){
+      const r=Array.isArray(r0)?r0.slice():[];
+      const tag=quarterTagFromRow(r);
+      if(tag){
+        sawTaggedBlock=true;
+        active=(tag.year===+year && tag.quarter===quarter);
+        if(active)out.push(r);
+        continue;
+      }
+      // A new report title precedes each quarter tag. Hold it temporarily so a
+      // non-selected block cannot leak its title/content into the selected block.
+      if(/^CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT/i.test(S1(r[0]))){
+        out.push(['__REPORT_TITLE_PENDING__']);
+        continue;
+      }
+      if(active)out.push(r);
+    }
+    if(!sawTaggedBlock)return (rows||[]).map(r=>Array.isArray(r)?r.slice():[]);
+    // Restore report titles only immediately before selected Extension Services rows.
+    const clean=[];
+    for(let i=0;i<out.length;i++){
+      if(out[i]&&out[i][0]==='__REPORT_TITLE_PENDING__')continue;
+      if(i===0 || !/Extension\s+Services\s*-\s*Quarter/i.test(S1(out[i][0]))) clean.push(out[i]);
+      else clean.push(['CONSOLIDATED EXTENSION PERFORMANCE AND BUDGET STATUS REPORT'],out[i]);
+    }
+    return clean;
+  }
+  /* Build a quarter-specific rows map before the existing parser/calculations run. */
+  function rowsMapForLiveQuarter(rowsMap,year,quarter){
+    const out={};
+    for(const [name,rows0] of Object.entries(rowsMap||{})){
+      if(/^REF_/i.test(name)){
+        out[name]=selectRefQuarterBlocks(rows0,year,quarter);
+        continue;
+      }
+      const rows=(rows0||[]).map(r=>Array.isArray(r)?r.slice():[]);
+      if(!/^CONSOLIDATED/i.test(name)){out[name]=rows;continue}
+      let h=-1,yi=-1,qi=-1,ii=-1;
+      for(let x=0;x<rows.length;x++){
+        const z=(rows[x]||[]).map(v=>S1(v).toLowerCase());
+        yi=z.indexOf('year'); qi=z.indexOf('quarter');
+        ii=z.findIndex(v=>/^indicator_?\s*id$/.test(v.replace(/\s+/g,' '))||v==='indicator_ id');
+        if(yi>=0&&qi>=0&&ii>=0){h=x;break}
+      }
+      if(h<0){out[name]=rows;continue}
+      rows[h]=(rows[h]||[]).slice(ii);
+      for(let x=h+1;x<rows.length;x++){
+        const r=rows[x]||[], id=S1(r[ii]);
+        if(!/^PI-\d+/i.test(id))continue;
+        rows[x]=(+r[yi]===+year && S1(r[qi]).toUpperCase()===quarter)?r.slice(ii):[];
+      }
+      out[name]=rows;
+    }
+    return out;
+  }
+  function loadLiveYear(year,requestedQuarter=null){
+    const maps=yearMaps(livePayload), rawRowsMap=maps[year]; if(!rawRowsMap)return false;
+    let qs=liveQuartersForYear(rawRowsMap,year);
+    if(!qs.length)qs=[detectQuarter(rawRowsMap)];
+    const currentQ='Q'+(Math.floor(new Date().getMonth()/3)+1);
+    const q=(requestedQuarter&&qs.includes(requestedQuarter))?requestedQuarter:(qs.includes(currentQ)?currentQ:qs[qs.length-1]);
+    const rowsMap=rowsMapForLiveQuarter(rawRowsMap,year,q);
+    DB=buildFromRowsMap(rowsMap);
+    if(!DB||!Object.keys(DB.cols||{}).length)throw new Error('No REF_* college data could be parsed for '+year+'.');
+    EMB_Y=year; EMB_Q=q;
+    sharedPeriods=qs.map(x=>({key:`live-${year}-${x}`,year,quarter:x,label:`FY ${year} ${x}`,shared:false,live:true}));
+    st.per=`live-${year}-${q}`; st.c='ALL'; st.p='ALL'; applyAuthScope();
+    document.getElementById('yr').innerHTML=liveYears.map(y=>`<option value="${y}">${y}</option>`).join('');
+    document.getElementById('yr').value=year;
+    document.getElementById('qr').innerHTML=qs.map(x=>`<option value="live-${year}-${x}">Quarter ${x.slice(1)}</option>`).join('');
+    document.getElementById('qr').value=st.per;
+    srcEl.textContent=`FY ${year} ${q.replace("Q","Quarter ")}`;
+    fillFilters(); render(); return true;
+  }
+
+  function isFacultyRole(){
+    return AUTH_USER && String(AUTH_USER.role||'').toUpperCase()==='FACULTY';
+  }
+  function ftxt(v){return v==null?'':String(v).trim()}
+  function fesc(v){return esc(ftxt(v))}
+  function fdate(v){
+    if(!v)return '—';
+    const d=parseDateLike(v);
+    return d?fmtDate(d):ftxt(v);
+  }
+  function fkey(x){
+    return [ftxt(x.programProject),ftxt(x.activityNo),ftxt(x.activityTitle)].join('|').toLowerCase();
+  }
+  function fprojectLabel(x){
+    return ftxt(x.programProject)||'Assigned Extension Project';
+  }
+  function facultyJoinRows(payload){
+    const acts=Array.isArray(payload.facultyActivities)?payload.facultyActivities:[];
+    const budgets=Array.isArray(payload.facultyActivitiesBudget)?payload.facultyActivitiesBudget:[];
+    const docs=Array.isArray(payload.facultyDocumentaryRequirements)?payload.facultyDocumentaryRequirements:[];
+    const bm=new Map(budgets.map(x=>[fkey(x),x]));
+    const dm=new Map(docs.map(x=>[fkey(x),x]));
+    return acts.map(a=>({a,b:bm.get(fkey(a))||{},d:dm.get(fkey(a))||{}}));
+  }
+  function facultyDocStatus(v){
+    const s=ftxt(v);
+    if(!s)return '—';
+    if(/^submitted/i.test(s))return '<span class="bd ok">✔ '+fesc(s)+'</span>';
+    if(/not yet due|n\/a/i.test(s))return '<span class="bd am">'+fesc(s)+'</span>';
+    return '<span class="bd na">'+fesc(s)+'</span>';
+  }
+  function facultyIpcr(payload,rows){
+    const docFields=[
+      ['Attendance','attendance'],
+      ['Evaluation Report','evaluationReport'],
+      ['Terminal Report','terminalReport'],
+      ['Monitoring Tool','monitoringTool'],
+      ['Monitoring Progress','monitoringProgress']
+    ];
+    const byProject={};
+    rows.forEach(r=>{
+      const k=fprojectLabel(r.a);
+      (byProject[k]=byProject[k]||[]).push(r);
+    });
+    const blocks=Object.entries(byProject).map(([proj,rs])=>{
+      const actuals=rs.map(r=>parseDateLike(r.b.actualImplementationDate)).filter(Boolean);
+      const projectLast=actuals.length?new Date(Math.max(...actuals.map(d=>d.getTime()))):null;
+      const scores=[];
+      const lines=[];
+      rs.forEach(r=>{
+        docFields.forEach(([label,key],idx)=>{
+          const raw=ftxt(r.d[key]);
+          const sd=submittedDate(raw);
+          if(!sd)return;
+          let due=null,ref='';
+          if(idx===0||idx===1){due=parseDateLike(r.b.actualImplementationDate);ref='Implementation Date'}
+          else if(idx===2){due=projectLast;ref='Last Project Implementation'}
+          else {due=semiAnnualDeadline(r.b.actualImplementationDate||projectLast);ref='Semi-Annual Deadline'}
+          if(!due)return;
+          const days=daysLate(due,sd), sc=timeScore(days);
+          if(sc){scores.push(sc.p);lines.push(`<div style="padding:7px 0;border-bottom:1px solid #e4ebe7"><b>${fesc(label)}</b> · Activity ${fesc(r.a.activityNo)}<br><span class="nt">${ref}: ${fesc(fmtDate(due))} · Submitted: ${fesc(fmtDate(sd))} · ${days} day${days===1?'':'s'} after due date · Rating: <b>${sc.p}</b></span></div>`)}
+        });
+      });
+      const avg=scores.length?scores.reduce((a,b)=>a+b,0)/scores.length:null;
+      return `<div class="project-status-item ${avg!=null&&avg>=4?'is-complete':'is-pending'}" style="margin-bottom:10px">
+        <div class="project-status-head"><span class="project-status-badge">${fesc(proj)}</span></div>
+        <div><b>IPCR Timeliness Rating:</b> ${avg==null?'N/A':avg.toFixed(2)+' / 5'}</div>
+        ${lines.length?lines.join(''):'<div class="nt">No submitted document with an applicable timeliness reference date.</div>'}
+      </div>`;
+    });
+    return blocks.join('')||'<div class="nt">No faculty-specific IPCR timeliness data available.</div>';
+  }
+  function renderFacultyDashboard(payload){
+    const rows=facultyJoinRows(payload);
+    const pis=Array.isArray(payload.collegePerformanceIndicators)?payload.collegePerformanceIndicators:[];
+    const name=payload.facultyName||AUTH_USER.facultyName||AUTH_USER.username||'Faculty';
+    const college=payload.college||AUTH_USER.college||'';
+    const implemented=rows.filter(r=>/implemented/i.test(ftxt(r.b.implementationStatus))).length;
+    const projectSet=new Set(rows.map(r=>fprojectLabel(r.a)).filter(Boolean));
+    const completedProjects=[...projectSet].filter(p=>{
+      const rr=rows.filter(r=>fprojectLabel(r.a)===p);
+      return rr.length&&rr.every(r=>/implemented/i.test(ftxt(r.b.implementationStatus)));
+    }).length;
+    const programs=new Set(rows.map(r=>{
+      const s=fprojectLabel(r.a);
+      const m=s.match(/PROGRAM\s+(.+?)(?:\s*[|–-]\s*(?:P?ROJECT|PROJECT)|$)/i);
+      return m?m[1].trim():s.split('|')[0].trim();
+    }).filter(Boolean));
+    const submittedDocs=rows.reduce((n,r)=>n+['attendance','evaluationReport','terminalReport','monitoringTool','monitoringProgress','reschedulingLetters'].filter(k=>/^submitted/i.test(ftxt(r.d[k]))).length,0);
+    const applicableDocs=rows.reduce((n,r)=>n+['attendance','evaluationReport','terminalReport','monitoringTool','monitoringProgress','reschedulingLetters'].filter(k=>!/^n\/a$/i.test(ftxt(r.d[k]))&&!/not yet due/i.test(ftxt(r.d[k]))&&ftxt(r.d[k])).length,0);
+
+    document.getElementById('view').textContent=`${name} — My Extension Performance`;
+    document.getElementById('pernote').textContent=`Faculty-specific view · ${college}. College Performance Indicators remain the official college-level accomplishment; activity, budget, documentary requirement, and IPCR details below are limited to this faculty account.`;
+    document.getElementById('col').innerHTML=`<option>${fesc(college)}</option>`;
+    document.getElementById('col').disabled=true;
+    document.getElementById('prog').innerHTML='<option>My Assigned Activities</option>';
+    document.getElementById('prog').disabled=true;
+
+    const K=[
+      card('⚙','Programs Assigned',programs.size,100,`${programs.size} program${programs.size===1?'':'s'} represented in your assigned activities`),
+      card('▣','Projects Completed',`${completedProjects} / ${projectSet.size}`,ratio(completedProjects,projectSet.size),`${completedProjects} of ${projectSet.size} assigned projects completed`),
+      card('✔','Activities Implemented',`${implemented} / ${rows.length}`,ratio(implemented,rows.length),`${implemented} of ${rows.length} assigned activities implemented`),
+      card('⌑','Document Submissions',applicableDocs?`${submittedDocs} / ${applicableDocs}`:submittedDocs,applicableDocs?ratio(submittedDocs,applicableDocs):null,'Based only on your authorized documentary requirement records')
+    ];
+    document.getElementById('vO').innerHTML=`<div class="k k5">${K.join('')}</div>`+
+      P('My Assigned Extension Activities',fyLabel(),`<div class="tw"><table><tr><th>Program / Project</th><th>Act. No.</th><th>Activity Title</th><th>Length of Training</th><th>Weighted Trainees</th><th>Status</th></tr><tbody>${
+        rows.map(r=>`<tr><td>${fesc(fprojectLabel(r.a))}</td><td>${fesc(r.a.activityNo)}</td><td>${fesc(r.a.activityTitle)}</td><td>${fesc(r.a.lengthOfTraining)||'—'}</td><td>${r.a.weightedTrainees==null?'—':fesc(r.a.weightedTrainees)}</td><td>${badge(ftxt(r.b.implementationStatus)||'For Implementation')}</td></tr>`).join('')
+      }</tbody></table></div>`,'np');
+
+    document.getElementById('vA').innerHTML=P('A. College Performance Indicators',college,
+      `<div class="nt" style="margin-bottom:10px">These are the official overall performance indicators of ${fesc(college)}. Individual faculty remarks are intentionally not returned to faculty accounts.</div>
+      <div class="tw"><table><tr><th>Indicator</th><th>Performance Indicator</th><th>Source</th><th>Target</th><th>Accomplishment</th><th>Variance</th><th>Status</th></tr><tbody>${
+        pis.map(i=>`<tr><td><b>${fesc(i.id)}</b></td><td>${fesc(i.performanceIndicator)}</td><td>${fesc(i.source)}</td><td>${fesc(i.target)}</td><td>${fesc(i.accomplishment)}</td><td>${fesc(i.variance)}</td><td>${badge(ftxt(i.status))}</td></tr>`).join('')
+      }</tbody></table></div>`,'np');
+
+    document.getElementById('vB').innerHTML=P('B. My Activities & Budget',fyLabel(),
+      `<div class="tw"><table><tr><th>Program / Project</th><th>Act. No.</th><th>Activity Title</th><th>Target Implementation</th><th>Actual Implementation</th><th>Status</th><th>Budget Allocation</th><th>Budget Utilized</th><th>Utilization Rate</th></tr><tbody>${
+        rows.map(r=>`<tr><td>${fesc(fprojectLabel(r.a))}</td><td>${fesc(r.a.activityNo)}</td><td>${fesc(r.a.activityTitle)}</td><td>${fesc(r.b.targetImplementationDate)||'—'}</td><td>${fesc(fdate(r.b.actualImplementationDate))}</td><td>${badge(ftxt(r.b.implementationStatus)||'For Implementation')}</td><td>${r.b.budgetAllocation==null?'—':peso(Number(r.b.budgetAllocation))}</td><td>${r.b.budgetUtilization==null?'—':peso(Number(r.b.budgetUtilization))}</td><td>${r.b.budgetUtilizationRate==null?'—':(typeof r.b.budgetUtilizationRate==='number'?pf(r.b.budgetUtilizationRate):fesc(r.b.budgetUtilizationRate))}</td></tr>`).join('')
+      }</tbody></table></div>`,'np');
+
+    const docsTable=`<div class="tw"><table><tr><th>Program / Project</th><th>Act. No.</th><th>Activity Title</th><th>Attendance</th><th>Evaluation Report</th><th>Terminal Report</th><th>Monitoring Tool</th><th>Monitoring Progress</th><th>Rescheduling Letter</th></tr><tbody>${
+      rows.map(r=>`<tr><td>${fesc(fprojectLabel(r.a))}</td><td>${fesc(r.a.activityNo)}</td><td>${fesc(r.a.activityTitle)}</td><td>${facultyDocStatus(r.d.attendance)}</td><td>${facultyDocStatus(r.d.evaluationReport)}</td><td>${facultyDocStatus(r.d.terminalReport)}</td><td>${facultyDocStatus(r.d.monitoringTool)}</td><td>${facultyDocStatus(r.d.monitoringProgress)}</td><td>${facultyDocStatus(r.d.reschedulingLetters)}</td></tr>`).join('')
+    }</tbody></table></div>`;
+    document.getElementById('vC').innerHTML=`<div class="g2" style="align-items:stretch">${P('C. My Documentary Requirements',fyLabel(),docsTable,'np docreq')}${P('My IPCR Timeliness Rating per Project','',facultyIpcr(payload,rows),'ipcrbox')}</div>`;
+
+    document.querySelector('.tabs button[data-t=O]').textContent='My Extension Overview';
+    document.querySelector('.tabs button[data-t=A]').textContent='A · College Performance Indicators';
+    document.querySelector('.tabs button[data-t=B]').textContent='B · My Activities & Budget';
+    document.querySelector('.tabs button[data-t=C]').textContent='C · My Documentary Requirements';
+    document.querySelectorAll('.v').forEach(v=>v.classList.toggle('on',v.id==='v'+st.t));
+    document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===st.t));
+  }
+
+  async function refreshLive(){
+    statusEl.textContent='● CONNECTING TO DATABASE…';
+    try{
+      const token=sessionStorage.getItem('eso_auth_token');
+      if(!token)throw new Error('No authenticated session.');
+      const secureUrl=AUTH_API+'?action=getData&token='+encodeURIComponent(token)+'&_='+Date.now();
+      const res=await fetch(secureUrl,{cache:'no-store',redirect:'follow'});
+      if(!res.ok)throw new Error(`HTTP ${res.status}`);
+      const payload=await res.json();
+      if(!payload.success)throw new Error(payload.error||'Apps Script returned success:false');
+      livePayload=payload;
+      if(isFacultyRole()){
+        const yr=(payload.facultyActivities||[]).map(x=>Number(x.year)).find(Number.isFinite)||new Date().getFullYear();
+        EMB_Y=yr; EMB_Q='Q4';
+        document.getElementById('yr').innerHTML=`<option value="${yr}">${yr}</option>`;
+        document.getElementById('yr').value=yr;
+        document.getElementById('yr').disabled=true;
+        document.getElementById('qr').innerHTML='<option value="faculty-live">Current Authorized Data</option>';
+        document.getElementById('qr').value='faculty-live';
+        document.getElementById('qr').disabled=true;
+        srcEl.textContent=`FY ${yr} · Faculty Authorized View`;
+        renderFacultyDashboard(payload);
+        statusEl.textContent='● LIVE DATABASE';
+        statusEl.title='Faculty dashboard data is loaded from the secured Apps Script response. No raw college sheet is returned.';
+        return;
+      }
+      const maps=yearMaps(payload); liveYears=Object.keys(maps).map(Number).sort((a,b)=>a-b);
+      if(!liveYears.length)throw new Error('No annual REF_* sheets were found. Expected names such as REF_CICS_2026.');
+      const current=+document.getElementById('yr').value;
+      const keepC=st.c, keepP=st.p;
+       const liveYear=liveYears.includes(current)?current:liveYears[liveYears.length-1];
+       const selectedPeriod=periodsIndex().find(p=>p.key===st.per);
+       const keepQ=(selectedPeriod&&selectedPeriod.live&&selectedPeriod.year===liveYear)?selectedPeriod.quarter:null;
+       loadLiveYear(liveYear,keepQ);
+       if(keepC==='ALL'||DB.cols[keepC]){st.c=keepC;if(keepC==='ALL'){st.p='ALL'}else{const ps=new Set(DB.cols[keepC].acts.map(a=>a.prog));st.p=(keepP==='ALL'||ps.has(keepP))?keepP:'ALL'}fillFilters();render();}
+      statusEl.textContent='● LIVE DATABASE';
+      statusEl.title='Dashboard data is loaded from the live database. Last refresh: '+new Date().toLocaleString();
+    }catch(err){
+      console.error('Google Sheet live refresh failed:',err);
+      statusEl.textContent='● DATABASE CONNECTION ERROR';
+      srcEl.textContent=err.message;
+      document.getElementById('view').innerHTML='<div style="padding:16px;border:1px solid #b4472f;border-radius:10px;background:#fff"><b>Live data could not be loaded.</b><br>'+esc(err.message)+'</div>';
+    }
+  }
+  window.refreshLive=refreshLive;
+  document.getElementById('yr').onchange=e=>{if(!isFacultyRole())loadLiveYear(+e.target.value)};
+  document.getElementById('qr').onchange=e=>{
+    const m=String(e.target.value||'').match(/^live-(\d{4})-(Q[1-4])$/);
+    if(m) loadLiveYear(+m[1],m[2]);
+  };
+  await refreshLive();
+  // Refresh automatically every 60 seconds while the dashboard is open.
+  setInterval(refreshLive,60000);
+})();
+</script><div id="cardDialogBackdrop" class="card-dialog-backdrop" aria-hidden="true">
+  <div class="card-dialog" role="dialog" aria-modal="true" aria-labelledby="cardDialogTitle">
+    <div class="card-dialog-head">
+      <b id="cardDialogTitle">Details</b>
+      <button type="button" class="card-dialog-close" aria-label="Close">&times;</button>
+    </div>
+    <div id="cardDialogBody" class="card-dialog-body"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const backdrop=document.getElementById('cardDialogBackdrop');
+  const title=document.getElementById('cardDialogTitle');
+  const body=document.getElementById('cardDialogBody');
+  if(!backdrop||!title||!body)return;
+
+  function closeDialog(){
+    backdrop.classList.remove('open');
+    backdrop.setAttribute('aria-hidden','true');
+    document.body.classList.remove('dialog-open');
+  }
+  function openCard(card){
+    const label=(card.querySelector('.kh b')||{}).textContent||'Details';
+    const nativeTip=card.getAttribute('title')||'';
+    const drill=card.querySelector('.act-hover-tip');
+    const isProjects=/^Projects Completed$/i.test(label.trim());
+    const isPrograms=/^Programs Conducted$/i.test(label.trim());
+    const isActivities=/^Activities Implemented$/i.test(label.trim());
+    const isFaculty=/^Faculty Involved$/i.test(label.trim());
+    const cardCount=(card.querySelector('.kv')||{}).textContent||'';
+    const facultyBlocks=isFaculty&&drill?drill.querySelectorAll(':scope > .act-tip-item.project-status-item').length:0;
+    title.textContent=isProjects?`Projects Status${cardCount?' — '+cardCount.trim()+' Completed':''}`:isPrograms?`Programs Status${cardCount?' — '+cardCount.trim()+' Conducted':''}`:isActivities?`Activities Status${cardCount?' — '+cardCount.trim()+' Implemented':''}`:isFaculty?`Faculty Involvement — ${facultyBlocks||cardCount.trim()} Unique Faculty`:label.trim();
+    body.innerHTML='';
+    if(nativeTip && !isProjects && !isFaculty){
+      const s=document.createElement('div');
+      s.className='card-dialog-summary';
+      s.textContent=nativeTip;
+      body.appendChild(s);
+    }
+    if(drill) body.appendChild(drill.cloneNode(true));
+    if(!nativeTip && !drill){
+      const s=document.createElement('div');
+      s.className='card-dialog-summary';
+      s.textContent='No additional details are available for this card.';
+      body.appendChild(s);
+    }
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden','false');
+    document.body.classList.add('dialog-open');
+  }
+
+  document.addEventListener('click',function(e){
+    const sdgTrack=e.target.closest('.sdg-rank-track.sdg-clickable');
+    if(sdgTrack){
+      e.preventDefault();
+      const n=sdgTrack.getAttribute('data-sdg'), count=sdgTrack.getAttribute('data-count')||'0';
+      const tip=sdgTrack.querySelector('.sdg-tip');
+      title.textContent=`SDG ${n} — ${SDG_META[+n]?SDG_META[+n][0]:'Activity Details'} (${count} Activit${count==='1'?'y':'ies'})`;
+      body.innerHTML='';
+      if(tip){ const clone=tip.cloneNode(true); clone.style.display='block'; clone.style.position='static'; clone.style.width='auto'; clone.style.maxHeight='none'; clone.style.boxShadow='none'; clone.style.border='0'; clone.style.padding='0'; body.appendChild(clone); }
+      backdrop.classList.add('open'); backdrop.setAttribute('aria-hidden','false'); document.body.classList.add('dialog-open');
+      return;
+    }
+    const card=e.target.closest('.kc');
+    if(card){
+      e.preventDefault();
+      openCard(card);
+      return;
+    }
+    if(e.target===backdrop || e.target.closest('.card-dialog-close')) closeDialog();
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeDialog(); });
+})();
+</script>
+
+<script>
+(function(){
+  function setupPasswordToggle(){
+    const input = document.getElementById('authPassword');
+    const btn = document.getElementById('authPasswordToggle');
+    const openEye = document.getElementById('authEyeOpen');
+    const closedEye = document.getElementById('authEyeClosed');
+    if(!input || !btn || !openEye || !closedEye) return;
+
+    btn.addEventListener('click', function(){
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      openEye.style.display = showing ? '' : 'none';
+      closedEye.style.display = showing ? 'none' : '';
+      const label = showing ? 'Show password' : 'Hide password';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+      input.focus();
+      const len = input.value.length;
+      try { input.setSelectionRange(len, len); } catch(e) {}
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', setupPasswordToggle);
+  } else {
+    setupPasswordToggle();
+  }
+})();
+</script>
+
+</body></html>
